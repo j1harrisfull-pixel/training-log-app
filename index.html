@@ -136,6 +136,7 @@ input, textarea { font: inherit; color: inherit; }
 .card__name { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
 .now-chip { flex: none; display: none; align-self: center; font-family: "Spline Sans Mono", monospace; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: 7px; background: var(--accent); color: var(--on-accent); }
 .card.is-current .now-chip { display: inline-flex; }
+.card { cursor: pointer; }
 .card.is-current { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent), var(--shadow); }
 .card.is-complete:not(.is-current) { opacity: .55; }
 .tag { flex: none; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid currentColor; }
@@ -588,14 +589,14 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   }
   function freshState(program, opts) {
     opts = opts || {};
-    return { version: 2, unit: program.unit, theme: opts.theme || "system", program: program, activeWeek: 0, activeSession: 0, log: {}, archive: opts.archive || [], restMuted: false };
+    return { version: 2, unit: program.unit, theme: opts.theme || "system", program: program, activeWeek: 0, activeSession: 0, log: {}, archive: opts.archive || [], restMuted: false, activeExerciseId: null };
   }
   function coerceState(parsed) {
     if (parsed && parsed.program) {
       var program = normalizeProgram(parsed.program);
       return { version: 2, unit: program.unit, theme: ["light", "dark", "system"].indexOf(parsed.theme) >= 0 ? parsed.theme : "system",
         program: program, activeWeek: clampInt(parsed.activeWeek, 0, program.weeks.length - 1, 0), activeSession: clampInt(parsed.activeSession, 0, 99, 0),
-        log: parsed.log && typeof parsed.log === "object" ? parsed.log : {}, archive: Array.isArray(parsed.archive) ? parsed.archive : [], restMuted: !!parsed.restMuted };
+        log: parsed.log && typeof parsed.log === "object" ? parsed.log : {}, archive: Array.isArray(parsed.archive) ? parsed.archive : [], restMuted: !!parsed.restMuted, activeExerciseId: parsed.activeExerciseId || null };
     }
     if (parsed && parsed.sessions) return migrateV1toV2(parsed);
     return null;
@@ -641,8 +642,17 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     var ses = curSession();
     return ses.exercises.map(function (e) { var lg = readLog(ses, e); return { id: e.id, sets: e.sets, doneCount: lg.done.filter(Boolean).length }; });
   }
+  function currentId() {
+    var sel = state.activeExerciseId;
+    if (sel && curSession().exercises.some(function (e) { return e.id === sel; })) return sel;
+    return firstIncompleteId(sessionItems());
+  }
+  function selectExercise(id) {
+    if (!id || state.activeExerciseId === id) return;
+    state.activeExerciseId = id; save(); applyGlance();
+  }
   function applyGlance() {
-    var items = sessionItems(), cid = firstIncompleteId(items), p = sessionProgress(items);
+    var items = sessionItems(), cid = currentId(), p = sessionProgress(items);
     var cards = listEl.querySelectorAll(".card");
     for (var i = 0; i < cards.length; i++) cards[i].classList.toggle("is-current", cards[i].getAttribute("data-ex") === cid);
     var fill = document.getElementById("sprogFill"), txt = document.getElementById("sprogTxt");
@@ -732,6 +742,8 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
 
   /* ===================== Interactions ===================== */
   function onListClick(ev) {
+    var cardEl = ev.target.closest(".card");
+    if (cardEl) selectExercise(cardEl.getAttribute("data-ex"));
     var btn = ev.target.closest("[data-act]"); if (!btn) return;
     var act = btn.getAttribute("data-act"), id = btn.getAttribute("data-ex"), e = findEx(id); if (!e) return;
     var ses = curSession();
