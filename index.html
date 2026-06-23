@@ -92,7 +92,8 @@ input, textarea { font: inherit; color: inherit; }
 
 /* week bar */
 .weekbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 18px 12px; }
-.weekbar__title { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.01em; line-height: 1.1; }
+.weekbar__prog { min-width: 0; flex: 1 1 auto; }
+.weekbar__title { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.01em; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .weekbar__goal { font-size: 12px; color: var(--ink-dim); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 56vw; }
 .weeknav { display: inline-flex; align-items: center; gap: 4px; flex: none; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
 .weeknav__btn { width: 38px; height: 38px; display: grid; place-items: center; border: 0; background: none; border-radius: 9px; font-size: 22px; line-height: 1; color: var(--ink); }
@@ -112,9 +113,14 @@ input, textarea { font: inherit; color: inherit; }
 .tab[aria-selected="true"] .tab__ink { transform: scaleX(1); }
 
 /* ---------- Session head ---------- */
-.session { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; padding: 18px 18px 6px; }
-.session__focus { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -.01em; line-height: 1.06; margin: 0; }
-.session__meta { font-size: 12px; color: var(--ink-dim); margin-top: 5px; letter-spacing: .02em; }
+.session { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 18px 6px; }
+.session__main { min-width: 0; flex: 1 1 auto; }
+.session__focus { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -.01em; line-height: 1.06; margin: 0; }
+.sprog { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+.sprog__track { flex: 0 1 150px; height: 6px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.sprog__fill { height: 100%; width: 100%; transform-origin: left; background: var(--accent); transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.sprog__txt { font-size: 12px; color: var(--ink-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sprog__tag { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--accent-ink); font-weight: 700; }
 .reset-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--line-strong); border-radius: 999px; padding: 9px 13px; font-size: 12px; font-weight: 600; letter-spacing: .03em; color: var(--ink); transition: border-color .12s ease, transform .12s ease; }
 .reset-btn:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 .reset-btn:active { transform: scale(.96); }
@@ -128,6 +134,10 @@ input, textarea { font: inherit; color: inherit; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .card__head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-right: 44px; }
 .card__name { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.now-chip { flex: none; display: none; align-self: center; font-family: "Spline Sans Mono", monospace; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: 7px; background: var(--accent); color: var(--on-accent); }
+.card.is-current .now-chip { display: inline-flex; }
+.card.is-current { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent), var(--shadow); }
+.card.is-complete:not(.is-current) { opacity: .55; }
 .tag { flex: none; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid currentColor; }
 .tag--strength { color: var(--accent-ink); }
 .tag--mobility { color: var(--mob); }
@@ -274,7 +284,6 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     <div class="weekbar">
       <div class="weekbar__prog">
         <div class="weekbar__title" id="progTitle">Program</div>
-        <div class="weekbar__goal" id="progGoal"></div>
       </div>
       <div class="weeknav" id="weekNav">
         <button class="weeknav__btn" id="weekPrev" aria-label="Previous week">‹</button>
@@ -287,7 +296,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
 
   <main>
     <div class="session" id="sessionHead"></div>
-    <div class="list reveal" id="list"></div>
+    <div class="list reveal" id="list" role="tabpanel" aria-label="Exercises for the selected day"></div>
   </main>
 </div>
 
@@ -463,6 +472,33 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     });
     return blocks;
   }
+  function firstIncompleteId(items) {
+    items = Array.isArray(items) ? items : [];
+    for (var i = 0; i < items.length; i++) { var it = items[i]; if (it && it.sets > 0 && (it.doneCount || 0) < it.sets) return it.id; }
+    return null;
+  }
+  function sessionProgress(items) {
+    items = Array.isArray(items) ? items : [];
+    var done = 0;
+    items.forEach(function (it) { if (it && it.sets > 0 && (it.doneCount || 0) >= it.sets) done++; });
+    return { done: done, total: items.length };
+  }
+  function pruneArchive(archive, max) {
+    if (!Array.isArray(archive)) return [];
+    if (max == null || max < 0) max = 0;
+    return archive.length > max ? archive.slice(archive.length - max) : archive.slice();
+  }
+  function compactLog(log) {
+    var out = {};
+    if (!log || typeof log !== "object") return out;
+    Object.keys(log).forEach(function (sid) {
+      var sl = log[sid]; if (!sl || !sl.ex) return;
+      var ex = {};
+      Object.keys(sl.ex).forEach(function (eid) { var el = sl.ex[eid]; if (el && Array.isArray(el.done) && el.done.some(Boolean)) ex[eid] = el; });
+      if (Object.keys(ex).length) out[sid] = { date: sl.date || null, ex: ex };
+    });
+    return out;
+  }
   function normalizeProgram(obj) {
     obj = obj && typeof obj === "object" ? obj : {};
     var weeksIn = Array.isArray(obj.weeks) ? obj.weeks : [];
@@ -569,13 +605,15 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     try { var v1 = localStorage.getItem(STORE_V1); if (v1) { return migrateV1toV2(JSON.parse(v1)); } } catch (e) {}
     return freshState(defaultProgram());
   }
-  function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { toast("Couldn't save — storage may be full"); } }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { toast("Couldn't save (storage may be full)"); } }
+  var saveTimer;
+  function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 400); }
 
   var state = load();
 
   /* ===================== Accessors ===================== */
   var $ = function (id) { return document.getElementById(id); };
-  var tabsEl = $("tabs"), listEl = $("list"), headEl = $("sessionHead");
+  var tabsEl = $("tabs"), listEl = $("list"), headEl = $("sessionHead"), revealTimer;
   function clampActive() {
     if (state.activeWeek >= state.program.weeks.length) state.activeWeek = state.program.weeks.length - 1;
     if (state.activeWeek < 0) state.activeWeek = 0;
@@ -599,12 +637,27 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     if (el.weight == null) el.weight = ex.weight;
     return { sl: sl, el: el };
   }
+  function sessionItems() {
+    var ses = curSession();
+    return ses.exercises.map(function (e) { var lg = readLog(ses, e); return { id: e.id, sets: e.sets, doneCount: lg.done.filter(Boolean).length }; });
+  }
+  function applyGlance() {
+    var items = sessionItems(), cid = firstIncompleteId(items), p = sessionProgress(items);
+    var cards = listEl.querySelectorAll(".card");
+    for (var i = 0; i < cards.length; i++) cards[i].classList.toggle("is-current", cards[i].getAttribute("data-ex") === cid);
+    var fill = document.getElementById("sprogFill"), txt = document.getElementById("sprogTxt");
+    if (fill) fill.style.transform = "scaleX(" + (p.total ? p.done / p.total : 0) + ")";
+    if (txt) txt.textContent = p.done + "/" + p.total + " done";
+  }
+  function scrollToCurrent() {
+    var c = listEl.querySelector(".card.is-current");
+    if (c) { try { c.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" }); } catch (e) {} }
+  }
 
   /* ===================== Render ===================== */
   function renderWeekBar() {
     var p = state.program, wk = curWeek();
     $("progTitle").textContent = p.title;
-    $("progGoal").textContent = p.goal || "";
     $("weekNo").textContent = wk.week;
     $("weekTotal").textContent = p.weeks.length;
     $("weekPrev").disabled = state.activeWeek <= 0;
@@ -614,24 +667,28 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     var sessions = curWeek().sessions;
     tabsEl.innerHTML = sessions.map(function (s, i) {
       var sel = i === state.activeSession;
-      return '<button class="tab" role="tab" data-tab="' + i + '" aria-selected="' + sel + '" tabindex="' + (sel ? "0" : "-1") + '"><span class="tab__name">' + esc(s.name) + '</span><span class="tab__ink" aria-hidden="true"></span></button>';
+      return '<button class="tab" role="tab" aria-controls="list" data-tab="' + i + '" aria-selected="' + sel + '" tabindex="' + (sel ? "0" : "-1") + '"><span class="tab__name">' + esc(s.name) + '</span><span class="tab__ink" aria-hidden="true"></span></button>';
     }).join("");
   }
   function renderHead() {
-    var ses = curSession(), wk = curWeek();
+    var ses = curSession(), wk = curWeek(), p = sessionProgress(sessionItems());
     headEl.innerHTML =
-      '<div><h1 class="session__focus">' + esc(ses.focus || ses.name) + '</h1>' +
-      '<div class="session__meta">Week ' + wk.week + (wk.deload ? " · deload" : "") + ' · ' + ses.exercises.length + ' exercises</div></div>' +
-      '<button class="reset-btn" id="resetBtn" type="button" aria-label="Reset all sets for this session"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> Reset sets</button>';
+      '<div class="session__main"><h1 class="session__focus">' + esc(ses.focus || ses.name) + '</h1>' +
+      '<div class="sprog"><div class="sprog__track"><div class="sprog__fill" id="sprogFill" style="transform:scaleX(' + (p.total ? p.done / p.total : 0) + ')"></div></div><span class="sprog__txt" id="sprogTxt">' + p.done + '/' + p.total + ' done</span>' + (wk.deload ? '<span class="sprog__tag">deload</span>' : '') + '</div></div>' +
+      '<button class="reset-btn" id="resetBtn" type="button" aria-label="Reset all sets for this session"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> Reset</button>';
     $("resetBtn").addEventListener("click", resetDay);
+  }
+  function pillsHtml(e, doneArr) {
+    var total = e.sets, html = "";
+    for (var k = 0; k < total; k++) {
+      var d = !!doneArr[k];
+      html += '<button type="button" class="pill' + (d ? " is-done" : "") + '" data-act="set" data-ex="' + e.id + '" data-set="' + k + '" aria-pressed="' + d + '" aria-label="Set ' + (k + 1) + ' of ' + total + (d ? ", done" : "") + '"><span class="pill__reps">' + esc(e.reps) + '</span><span class="pill__lbl">reps</span></button>';
+    }
+    return html;
   }
   function buildCard(e, i, ses, badge) {
     var lg = readLog(ses, e), total = e.sets, doneCount = lg.done.filter(Boolean).length, complete = total > 0 && doneCount === total, unit = state.program.unit, ln = loadNote(e.equipment);
-    var pills = "";
-    for (var k = 0; k < total; k++) {
-      var d = !!lg.done[k];
-      pills += '<button type="button" class="pill' + (d ? " is-done" : "") + '" data-act="set" data-ex="' + e.id + '" data-set="' + k + '" aria-pressed="' + d + '" aria-label="Set ' + (k + 1) + ' of ' + total + (d ? ", done" : "") + '"><span class="pill__reps">' + esc(e.reps) + '</span><span class="pill__lbl">reps</span></button>';
-    }
+    var pills = pillsHtml(e, lg.done);
     var weightCtrl = e.type === "strength"
       ? '<div class="weight-wrap"><div class="weight" role="group" aria-label="Working weight"><button type="button" class="step" data-act="w-" data-ex="' + e.id + '" aria-label="Decrease weight">−</button><span class="weight__field"><input class="weight__input mono" type="number" inputmode="decimal" step="' + STEP + '" min="0" value="' + lg.weight + '" data-act="wset" data-ex="' + e.id + '" aria-label="Working weight in ' + esc(unit) + '"><span class="weight__unit">' + esc(unit) + '</span></span><button type="button" class="step" data-act="w+" data-ex="' + e.id + '" aria-label="Increase weight">+</button></div>' + (ln ? '<div class="loadnote">' + esc(ln) + '</div>' : '') + '</div>'
       : '<span class="weight-note">' + (e.weight > 0 ? esc(e.weight + " " + unit) : "Bodyweight") + ' · move with control</span>';
@@ -639,7 +696,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
       ? '<div class="cue">' + (e.target ? '<span>target <b>' + esc(e.target) + '</b></span>' : "") + (e.rest ? '<span>rest <b>' + esc(e.rest) + '</b></span>' : "") + '</div>'
       : "";
     return '<article class="card' + (complete ? " is-complete" : "") + '" data-ex="' + e.id + '" style="--i:' + i + '">' +
-      '<header class="card__head">' + (badge ? '<span class="ex-badge">' + esc(badge) + '</span>' : '') + '<h3 class="card__name">' + esc(e.name) + '</h3><span class="tag tag--' + e.type + '">' + e.type + '</span></header>' +
+      '<header class="card__head">' + (badge ? '<span class="ex-badge">' + esc(badge) + '</span>' : '') + '<h3 class="card__name">' + esc(e.name) + '</h3><span class="now-chip" aria-hidden="true">Now</span><span class="tag tag--' + e.type + '">' + e.type + '</span></header>' +
       '<div class="card__row">' + weightCtrl + '<div class="setcount"><span class="setcount__done">' + doneCount + '</span><span class="setcount__sep">/</span><span class="setcount__total">' + total + '</span><span class="setcount__label">sets</span></div></div>' +
       '<div class="pills" role="group" aria-label="Sets — tap to log">' + pills + '</div>' + cue +
       '<button type="button" class="notes-toggle" data-act="notes" data-ex="' + e.id + '" aria-expanded="' + (e.notesOpen ? "true" : "false") + '" aria-controls="n-' + e.id + '"><span class="chev" aria-hidden="true">▸</span> Form notes' + (e.notes && e.notes.trim() ? ' <span class="dot" aria-hidden="true"></span>' : "") + '</button>' +
@@ -664,8 +721,14 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     });
     listEl.classList.toggle("reveal", !!animate);
     listEl.innerHTML = html;
+    applyGlance();
+    // Drop the entrance class once it has played, so its forwards-fill opacity
+    // stops overriding the "dim completed" rule.
+    clearTimeout(revealTimer);
+    if (animate) revealTimer = setTimeout(function () { listEl.classList.remove("reveal"); }, 900);
+    else listEl.classList.remove("reveal");
   }
-  function renderAll(animate) { clampActive(); renderWeekBar(); renderTabs(); renderHead(); renderList(animate); }
+  function renderAll(animate) { clampActive(); renderWeekBar(); renderTabs(); renderHead(); renderList(animate); if (animate) scrollToCurrent(); }
 
   /* ===================== Interactions ===================== */
   function onListClick(ev) {
@@ -685,6 +748,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
       card.querySelector(".setcount__done").textContent = dc;
       card.classList.toggle("is-complete", e.sets > 0 && dc === e.sets);
       if (on) { unlockAudio(); startRest(e); }
+      applyGlance();
     } else if (act === "w-" || act === "w+") {
       var wl = writeLog(ses, e);
       wl.el.weight = roundW(Math.max(0, wl.el.weight + (act === "w+" ? STEP : -STEP))); save();
@@ -696,33 +760,29 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     } else if (act === "sets-" || act === "sets+") {
       var ns = clampInt(e.sets + (act === "sets+" ? 1 : -1), SETS_MIN, SETS_MAX, e.sets);
       if (ns === e.sets) return;
-      e.sets = ns; var w2 = writeLog(ses, e); save(); replaceCard(id);
+      e.sets = ns; writeLog(ses, e); save();
+      var card2 = btn.closest(".card"), lg2 = readLog(ses, e), dc2 = lg2.done.filter(Boolean).length;
+      card2.querySelector(".pills").innerHTML = pillsHtml(e, lg2.done);
+      card2.querySelector(".setcount__total").textContent = e.sets;
+      card2.querySelector(".setcount__done").textContent = dc2;
+      var sv = card2.querySelector(".stepper__val"); if (sv) sv.textContent = e.sets;
+      card2.classList.toggle("is-complete", e.sets > 0 && dc2 === e.sets);
+      applyGlance();
     }
   }
   function onListInput(ev) {
     var el = ev.target, act = el.getAttribute("data-act"); if (!act) return;
     var e = findEx(el.getAttribute("data-ex")); if (!e) return; var ses = curSession();
-    if (act === "wset") { var w = writeLog(ses, e); w.el.weight = roundW(Math.max(0, numOr(el.value, 0))); save(); }
+    if (act === "wset") { var w = writeLog(ses, e); w.el.weight = roundW(Math.max(0, numOr(el.value, 0))); saveSoon(); }
     else if (act === "note") {
-      e.notes = el.value; save();
+      e.notes = el.value; saveSoon();
       var tog = listEl.querySelector('.notes-toggle[data-ex="' + e.id + '"]'), dot = tog.querySelector(".dot");
       if (e.notes.trim() && !dot) tog.insertAdjacentHTML("beforeend", ' <span class="dot" aria-hidden="true"></span>');
       else if (!e.notes.trim() && dot) dot.remove();
     } else if (act === "reps") {
-      e.reps = el.value; save();
+      e.reps = el.value; saveSoon();
       el.closest(".card").querySelectorAll(".pill__reps").forEach(function (r) { r.textContent = e.reps; });
     }
-  }
-  function replaceCard(id) {
-    var ses = curSession(), blocks = groupExercises(ses.exercises), found = null, badge = null;
-    blocks.forEach(function (block) {
-      var sup = block.group && block.items.length > 1;
-      block.items.forEach(function (e, j) { if (e.id === id) { found = e; badge = sup ? block.group + (j + 1) : null; } });
-    });
-    if (!found) return;
-    listEl.classList.remove("reveal");
-    var old = listEl.querySelector('.card[data-ex="' + id + '"]');
-    if (old) old.outerHTML = buildCard(found, 0, ses, badge);
   }
   function resetDay() {
     var ses = curSession();
@@ -731,11 +791,11 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     if (sl && sl.ex) { Object.keys(sl.ex).forEach(function (k) { sl.ex[k].done = sl.ex[k].done.map(function () { return false; }); }); sl.date = null; }
     save(); renderHead(); renderList(true); toast(ses.name + " reset");
   }
-  function switchSession(i) { if (i === state.activeSession) return; state.activeSession = i; save(); renderTabs(); renderHead(); renderList(true); }
+  function switchSession(i) { if (i === state.activeSession) return; hideRest(); state.activeSession = i; save(); renderTabs(); renderHead(); renderList(true); scrollToCurrent(); }
   function switchWeek(delta) {
     var ni = state.activeWeek + delta;
     if (ni < 0 || ni >= state.program.weeks.length) return;
-    state.activeWeek = ni; state.activeSession = 0; save(); renderAll(true);
+    hideRest(); state.activeWeek = ni; state.activeSession = 0; save(); renderAll(true);
   }
   tabsEl.addEventListener("click", function (ev) { var t = ev.target.closest(".tab"); if (t) switchSession(parseInt(t.getAttribute("data-tab"), 10)); });
   tabsEl.addEventListener("keydown", function (ev) {
@@ -818,9 +878,11 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   }
   function confirmLoad() {
     if (!pending) return;
-    state.archive.push({ title: state.program.title, program: state.program, log: state.log, archivedAt: new Date().toISOString() });
+    hideRest();
+    state.archive.push({ title: state.program.title, program: state.program, log: compactLog(state.log), archivedAt: new Date().toISOString() });
+    state.archive = pruneArchive(state.archive, 12);
     state.program = pending; state.unit = pending.unit; state.activeWeek = 0; state.activeSession = 0; state.log = {};
-    pending = null; save(); applyTheme(); renderAll(true); closePlan(); toast("Loaded — " + state.program.title);
+    pending = null; save(); applyTheme(); renderAll(true); closePlan(); toast("Loaded " + state.program.title);
   }
   $("planBtn").addEventListener("click", openPlan);
   $("closePlan").addEventListener("click", closePlan);
@@ -858,7 +920,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
         var parsed = JSON.parse(reader.result), c = coerceState(parsed);
         if (!c) throw new Error("bad");
         if (!confirm("Replace all current data with this backup? This can't be undone.")) return;
-        state = c; save(); applyTheme(); renderAll(true); syncSegs(); closeSheet(); toast("Backup restored");
+        hideRest(); state = c; save(); applyTheme(); renderAll(true); syncSegs(); closeSheet(); toast("Backup restored");
       } catch (e) { toast("That file isn't a valid backup"); }
     };
     reader.onerror = function () { toast("Couldn't read that file"); };
@@ -869,7 +931,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   $("importFile").addEventListener("change", function (ev) { if (ev.target.files && ev.target.files[0]) importBackup(ev.target.files[0]); ev.target.value = ""; });
   $("eraseBtn").addEventListener("click", function () {
     if (!confirm("Reset to the Starter program? Your current program and history will be erased. This can't be undone.")) return;
-    state = freshState(defaultProgram()); save(); applyTheme(); renderAll(true); syncSegs(); closeSheet(); toast("Reset to Starter");
+    hideRest(); state = freshState(defaultProgram()); save(); applyTheme(); renderAll(true); syncSegs(); closeSheet(); toast("Reset to Starter");
   });
 
   /* ===================== Rest timer (auto-start, read-only) ===================== */

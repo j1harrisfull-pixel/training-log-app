@@ -5,7 +5,7 @@
    - Google Fonts (CSS + font files): runtime cache, cache-first
    Bump CACHE_VERSION to ship a new shell. */
 
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const SHELL_CACHE = `training-log-shell-${CACHE_VERSION}`;
 const FONT_CACHE = `training-log-fonts-${CACHE_VERSION}`;
 
@@ -63,18 +63,19 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // App navigations — offline-first: serve the cached shell, fall back to network.
+  // App navigations — stale-while-revalidate: serve the cached shell instantly,
+  // then refresh it in the background so a deployed update reaches the user on the
+  // next launch without needing a CACHE_VERSION bump.
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
         const cache = await caches.open(SHELL_CACHE);
-        const shell = (await cache.match("./index.html")) || (await cache.match("./"));
-        if (shell) return shell;
-        try {
-          return await fetch(request);
-        } catch (err) {
-          return new Response("Offline", { status: 503, statusText: "Offline" });
-        }
+        const cached = (await cache.match("./index.html")) || (await cache.match("./"));
+        const network = fetch("./index.html").then((resp) => {
+          if (resp && resp.ok) { cache.put("./index.html", resp.clone()); cache.put("./", resp.clone()); }
+          return resp;
+        }).catch(() => null);
+        return cached || (await network) || new Response("Offline", { status: 503, statusText: "Offline" });
       })()
     );
     return;
