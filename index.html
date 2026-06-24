@@ -227,6 +227,17 @@ dialog.sheet[open] { animation: sheetUp .3s cubic-bezier(.2,.8,.2,1); }
 .sheet__about { font-size: 12px; color: var(--ink-dim); text-align: center; margin-top: 6px; letter-spacing: .02em; }
 .sheet__close { width: 100%; margin-top: 4px; }
 .hidden { display: none !important; }
+.intro { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: max(26px, env(safe-area-inset-top)) 22px max(26px, env(safe-area-inset-bottom)); background: var(--bg); overflow-y: auto; }
+.intro[hidden] { display: none; }
+.intro__card { max-width: 440px; width: 100%; animation: rise .5s cubic-bezier(.2,.8,.2,1); }
+.intro__mark { width: 60px; height: 30px; color: var(--accent-ink); display: block; margin-bottom: 18px; }
+.intro__title { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 30px; letter-spacing: -.01em; margin: 0 0 10px; }
+.intro__lead { font-size: 15px; line-height: 1.55; color: var(--ink-dim); margin: 0 0 20px; }
+.intro__list { list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 13px; }
+.intro__list li { position: relative; padding-left: 22px; font-size: 14px; line-height: 1.5; color: var(--ink); }
+.intro__list li::before { content: ""; position: absolute; left: 0; top: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.intro__go { width: 100%; }
+.intro__add { font-size: 12px; color: var(--ink-dim); text-align: center; margin: 14px 0 0; }
 .adv { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 6px; }
 .adv > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink-dim); padding: 8px 2px; list-style: none; }
 .adv > summary::-webkit-details-marker { display: none; }
@@ -451,6 +462,27 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     <div class="resttimer__track"><div class="resttimer__fill" id="restFill"></div></div>
   </div>
   <button class="resttimer__skip" id="restSkip" type="button">Skip</button>
+</div>
+
+<div class="intro" id="intro" hidden>
+  <div class="intro__card">
+    <svg class="intro__mark" viewBox="0 0 48 24" aria-hidden="true"><g fill="currentColor">
+      <rect x="18" y="10.5" width="12" height="3" rx="1.5"/>
+      <rect x="11.5" y="5.5" width="4.6" height="13" rx="2.2"/>
+      <rect x="31.9" y="5.5" width="4.6" height="13" rx="2.2"/>
+      <rect x="6.5" y="8.3" width="3.6" height="7.4" rx="1.8"/>
+      <rect x="37.9" y="8.3" width="3.6" height="7.4" rx="1.8"/>
+    </g></svg>
+    <h1 class="intro__title">Training Log</h1>
+    <p class="intro__lead">Your offline training companion. Build a week, train, log your sets. Everything stays on your phone, no account, no internet needed.</p>
+    <ul class="intro__list">
+      <li><b>Build a week:</b> tap the program button, top right, and pick your goal, days, time and kit.</li>
+      <li><b>Log as you go:</b> tap the rep pills to mark sets done, nudge your working weight up or down.</li>
+      <li><b>Technique:</b> open <b>Form notes</b> on any exercise for the coaching cues.</li>
+    </ul>
+    <button class="btn btn--primary intro__go" id="introGo" type="button">Start training</button>
+    <p class="intro__add">Tip: in Safari, tap Share then “Add to Home Screen” to keep it on your phone.</p>
+  </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1508,7 +1540,14 @@ function generateProgram(intake, weightMap, seed) {
   var toastTimer;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2300); }
 
-  initRest(); save(); applyTheme(); renderAll(true); initPersistence();
+  function initIntro() {
+    var KEY = "training-log:intro";
+    try { if (localStorage.getItem(KEY)) return; } catch (e) { return; }
+    var el = $("intro"); if (!el) return;
+    el.hidden = false;
+    $("introGo").addEventListener("click", function () { el.hidden = true; try { localStorage.setItem(KEY, "1"); } catch (e) {} });
+  }
+  initRest(); save(); applyTheme(); renderAll(true); initPersistence(); initIntro();
   if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js").catch(function () {}); }); }
 })();
 </script>
