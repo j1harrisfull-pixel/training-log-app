@@ -799,6 +799,9 @@ const LIBRARY = [
   { id: "easy-jog", name: "Easy Jog / Brisk Walk", type: "conditioning", equipment: "bodyweight", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: relaxed posture, soft cadence. Key: hold a pace you could chat at, nose-breathe, stay even. Fault: drifting faster until you're out of Zone 2." },
   { id: "burpees", name: "Burpees", type: "conditioning", equipment: "bodyweight", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "reps", intensity: "interval", cue: "Setup: clear floor space. Key: chest to floor, drive up, jump and reach tall, repeat with rhythm. Fault: sagging hips on the floor or skipping full extension." },
   { id: "mountain-climbers", name: "Mountain Climbers", type: "conditioning", equipment: "bodyweight", pattern: "conditioning", muscles: ["core", "full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: strong plank, hands under shoulders. Key: drive the knees fast, hips low and level, brace the core. Fault: hips bouncing up or shoulders drifting back." },
+  { id: "tempo-bike", name: "Tempo Bike", type: "conditioning", equipment: "cardio", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", intensity: "threshold", cue: "Setup: moderate resistance, steady cadence. Key: hold a comfortably hard pace, the edge where talking gets clipped, even effort across each block. Fault: surging then fading instead of holding the line." },
+  { id: "tempo-row", name: "Tempo Row", type: "conditioning", equipment: "cardio", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", intensity: "threshold", cue: "Setup: strapped in, tall posture. Key: sustain one controlled hard pace at the edge of comfortable, smooth legs then back then arms. Fault: sprinting the first block and blowing up early." },
+  { id: "tempo-run", name: "Tempo Run", type: "conditioning", equipment: "cardio", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", intensity: "threshold", cue: "Setup: flat ground or treadmill, slight incline fine. Key: hold a steady comfortably hard pace, relaxed shoulders, even breathing rhythm. Fault: drifting into a sprint and losing the rhythm." },
 ];
 
 function parseIntake(text) {
@@ -936,8 +939,9 @@ function pickByType(type, allowed, used, seed) {
 function prescription(ex, goal, isAnchor, minutes) {
   if (ex.type === "mobility") return { sets: 2, reps: ex.unit === "sec" ? "30s" : "8-10", target: "", rest: "" };
   if (ex.type === "conditioning") {
-    if (ex.intensity === "z2") { var z = Math.max(15, Math.min(45, Math.round((minutes || 60) * 0.45))); return { sets: 1, reps: z + " min", target: "Zone 2 · conversational", rest: "" }; }
-    var im = Math.max(6, Math.min(15, Math.round((minutes || 60) / 4))); return { sets: 1, reps: im + " min", target: "hard intervals", rest: "" };
+    if (ex.intensity === "z2") { var z = Math.max(20, Math.min(45, Math.round((minutes || 60) * 0.5))); return { sets: 1, reps: z + " min", target: "Zone 2 · conversational pace", rest: "" }; }
+    if (ex.intensity === "threshold") return { sets: 3, reps: "8 min", target: "tempo · comfortably hard", rest: "3 min easy" };
+    return { sets: 4, reps: "4 min", target: "intervals · near-max effort", rest: "3 min easy" }; // VO2: validated 4x4
   }
   var anchor = ex.compound && isAnchor;
   if (goal === "strength") return anchor ? { sets: 5, reps: "3-5", target: "RPE 8", rest: "3 min" } : { sets: 3, reps: "8-10", target: "RPE 8", rest: "90 s" };
@@ -1027,7 +1031,9 @@ function generateProgram(intake, weightMap, seed) {
     }
     // Research: strength FIRST, then conditioning, then mobility (cooldown).
     if (includeCon) {
-      var intensity = isHybrid ? (si % 2 === 0 ? "z2" : "interval") : (isEnd ? (si % 2 === 0 ? "interval" : "z2") : "interval");
+      var intensity = isHybrid ? (si % 2 === 0 ? "z2" : "interval")
+        : isEnd ? (si === 1 ? "interval" : (si === 3 ? "threshold" : "z2"))  // polarized 80/20: mostly Zone 2, one VO2 day, one tempo day
+        : "interval";
       var con = pickConditioning(intensity, allowed, ctx.used, seed + si * 5);
       if (con) { ctx.used[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes)); }
     }
@@ -1189,6 +1195,7 @@ function generateProgram(intake, weightMap, seed) {
     var pills = pillsHtml(e, lg.done);
     var weightCtrl = e.type === "strength"
       ? '<div class="weight-wrap"><div class="weight" role="group" aria-label="Working weight"><button type="button" class="step" data-act="w-" data-ex="' + e.id + '" aria-label="Decrease weight">−</button><span class="weight__field"><input class="weight__input mono" type="number" inputmode="decimal" step="' + STEP + '" min="0" value="' + lg.weight + '" data-act="wset" data-ex="' + e.id + '" aria-label="Working weight in ' + esc(unit) + '"><span class="weight__unit">' + esc(unit) + '</span></span><button type="button" class="step" data-act="w+" data-ex="' + e.id + '" aria-label="Increase weight">+</button></div>' + (ln ? '<div class="loadnote">' + esc(ln) + '</div>' : '') + '</div>'
+      : e.type === "conditioning" ? ''
       : '<span class="weight-note">' + (e.weight > 0 ? esc(e.weight + " " + unit) : "Bodyweight") + ' · move with control</span>';
     var cue = (e.target || e.rest)
       ? '<div class="cue">' + (e.target ? '<span>target <b>' + esc(e.target) + '</b></span>' : "") + (e.rest ? '<span>rest <b>' + esc(e.rest) + '</b></span>' : "") + '</div>'
