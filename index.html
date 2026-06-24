@@ -850,15 +850,16 @@ var GOAL_TEXT = { hybrid: "Hybrid", strength: "Strength & muscle", endurance: "E
 
 function splitForDays(days, goal) {
   days = Math.max(1, Math.min(7, days || 4));
-  var hyp = goal === "hypertrophy";
+  // Area-focused splits so days adapt to different areas instead of repeating
+  // "Full Body". A 1-day plan is genuinely full-body; everything else is split.
   switch (days) {
     case 1: return ["full"];
     case 2: return ["upper", "lower"];
-    case 3: return hyp ? ["push", "pull", "legs"] : ["full", "full", "full"];
+    case 3: return ["push", "pull", "legs"];
     case 4: return ["upper", "lower", "upper", "lower"];
     case 5: return ["push", "pull", "legs", "upper", "lower"];
     case 6: return ["push", "pull", "legs", "push", "pull", "legs"];
-    default: return ["push", "pull", "legs", "upper", "lower", "full", "full"];
+    default: return ["push", "pull", "legs", "upper", "lower", "push", "pull"];
   }
 }
 
