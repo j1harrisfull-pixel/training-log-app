@@ -323,9 +323,9 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     <div class="bsect">
       <div class="blabel">Goal</div>
       <div class="seg seg--full" id="bGoal" role="group" aria-label="Goal">
-        <button data-goal="hypertrophy" type="button">Muscle</button>
+        <button data-goal="hybrid" type="button">Hybrid</button>
         <button data-goal="strength" type="button">Strength</button>
-        <button data-goal="general" type="button">General</button>
+        <button data-goal="endurance" type="button">Endurance</button>
       </div>
     </div>
     <div class="bsect">
@@ -735,12 +735,14 @@ const LIBRARY = [
   { id: "shoulder-dislocates", name: "Band Shoulder Dislocates", type: "mobility", equipment: "band", pattern: "shoulder-mobility", muscles: ["shoulders"], compound: false, goals: MOB, unit: "reps", cue: "Setup: wide grip on a band overhead. Key: take the band slowly over and behind, straight arms, ribs down. Fault: bending the elbows or arching the back." },
   { id: "wrist-prep", name: "Wrist Prep Rocks", type: "mobility", equipment: "bodyweight", pattern: "wrist-mobility", muscles: ["wrists"], compound: false, goals: MOB, unit: "reps", cue: "Setup: hands flat on the floor, fingers various directions. Key: rock gently to load the wrists, build range slowly. Fault: forcing into pain." },
 
-  // ---------- CONDITIONING ----------
-  { id: "bike-intervals", name: "Bike Intervals", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", cue: "Setup: seat height level with the hip. Key: hard efforts with easy spins between, steady breathing. Fault: starting too hard and fading." },
-  { id: "row-intervals", name: "Rower Intervals", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", cue: "Setup: strapped in, tall posture. Key: drive legs, then back, then arms; reverse the order on the return. Fault: yanking with the arms first or rounding the back." },
-  { id: "incline-walk", name: "Incline Treadmill Walk", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", cue: "Setup: steep incline, brisk pace. Key: tall posture, no holding the rails, steady breathing. Fault: leaning on the handrails and killing the effort." },
-  { id: "sled-push", name: "Sled Push", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["legs", "full body"], compound: true, goals: CON, unit: "sec", cue: "Setup: low arms, lean into the sled. Key: drive with short powerful steps, full leg extension. Fault: standing too upright and stalling." },
-  { id: "kb-complex", name: "Kettlebell Complex", type: "conditioning", equipment: "kettlebell", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "reps", cue: "Setup: one bell, clear space. Key: flow swing to clean to press without resting, brace throughout. Fault: losing form as fatigue sets in." },
+  // ---------- CONDITIONING (intensity: z2 = steady aerobic base, interval = hard) ----------
+  { id: "zone2-bike", name: "Zone 2 Bike", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: easy resistance, seat level with the hip. Key: hold a conversational pace, nose-breathe, smooth cadence the whole block. Fault: drifting too hard so you couldn't hold a conversation." },
+  { id: "zone2-row", name: "Zone 2 Row", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: strapped in, tall posture, low drag. Key: legs-back-arms at an easy steady pace you can talk through. Fault: pulling too hard and creeping out of Zone 2." },
+  { id: "incline-walk", name: "Incline Treadmill Walk", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: steep incline, brisk but easy pace. Key: tall posture, no holding the rails, breathe through the nose. Fault: leaning on the handrails and killing the effort." },
+  { id: "bike-intervals", name: "Bike Intervals", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: seat level with the hip. Key: hard efforts with easy spins between, near-full recovery before the next. Fault: starting too hard and fading across the set." },
+  { id: "row-intervals", name: "Rower Intervals", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: strapped in, tall posture. Key: powerful legs-then-back-then-arms on the drive, controlled recovery. Fault: yanking with the arms first or rounding the back." },
+  { id: "sled-push", name: "Sled Push", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["legs", "full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: low arms, lean into the sled. Key: drive with short powerful steps, full leg extension. Fault: standing too upright and stalling." },
+  { id: "kb-complex", name: "Kettlebell Complex", type: "conditioning", equipment: "kettlebell", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "reps", intensity: "interval", cue: "Setup: one bell, clear space. Key: flow swing to clean to press without resting, brace throughout. Fault: letting form slip as fatigue sets in." },
 ];
 
 function parseIntake(text) {
@@ -824,7 +826,7 @@ var ROLES = {
 };
 var ROLE_NAME = { full: "Full Body", upper: "Upper", lower: "Lower", push: "Push", pull: "Pull", legs: "Legs" };
 var ROLE_FOCUS = { full: "Full body", upper: "Push · pull", lower: "Squat · hinge", push: "Chest · shoulders · triceps", pull: "Back · biceps", legs: "Quads · hams · glutes" };
-var GOAL_TEXT = { hypertrophy: "Build muscle", strength: "Get stronger", conditioning: "Conditioning", general: "General fitness" };
+var GOAL_TEXT = { hybrid: "Hybrid", strength: "Strength & muscle", endurance: "Endurance", hypertrophy: "Build muscle", conditioning: "Conditioning", general: "General fitness" };
 
 function splitForDays(days, goal) {
   days = Math.max(1, Math.min(7, days || 4));
@@ -853,16 +855,27 @@ function pickByType(type, used, seed) {
   if (!pool.length) return null;
   return pool[Math.abs(seed) % pool.length];
 }
-function prescription(ex, selGoal, isAnchor, minutes) {
+function prescription(ex, goal, isAnchor, minutes) {
   if (ex.type === "mobility") return { sets: 2, reps: ex.unit === "sec" ? "30s" : "8-10", target: "", rest: "" };
-  if (ex.type === "conditioning") { var mins = Math.max(6, Math.min(15, Math.round((minutes || 60) / 3))); return { sets: 1, reps: ex.unit === "sec" ? (mins + " min") : "10-15", target: "easy-moderate", rest: "" }; }
+  if (ex.type === "conditioning") {
+    if (ex.intensity === "z2") { var z = Math.max(15, Math.min(45, Math.round((minutes || 60) * 0.45))); return { sets: 1, reps: z + " min", target: "Zone 2 · conversational", rest: "" }; }
+    var im = Math.max(6, Math.min(15, Math.round((minutes || 60) / 4))); return { sets: 1, reps: im + " min", target: "hard intervals", rest: "" };
+  }
   var anchor = ex.compound && isAnchor;
-  if (selGoal === "strength") return anchor ? { sets: 5, reps: "3-5", target: "RPE 8", rest: "3 min" } : { sets: 3, reps: "6-8", target: "RPE 8", rest: "90 s" };
-  if (selGoal === "hypertrophy") return anchor ? { sets: 4, reps: "6-8", target: "RPE 7-8", rest: "2-3 min" } : { sets: 3, reps: "10-15", target: "RPE 8", rest: "75 s" };
+  if (goal === "strength") return anchor ? { sets: 5, reps: "3-5", target: "RPE 8", rest: "3 min" } : { sets: 3, reps: "8-10", target: "RPE 8", rest: "90 s" };
+  if (goal === "hypertrophy") return anchor ? { sets: 4, reps: "6-8", target: "RPE 7-8", rest: "2-3 min" } : { sets: 3, reps: "10-15", target: "RPE 8", rest: "75 s" };
+  if (goal === "hybrid") return anchor ? { sets: 4, reps: "5-6", target: "RPE 7-8", rest: "2 min" } : { sets: 3, reps: "8-12", target: "RPE 8", rest: "75 s" };
+  if (goal === "endurance") return { sets: 3, reps: "15-20", target: "RPE 8", rest: "45 s" };
   return anchor ? { sets: 3, reps: "8-10", target: "RPE 7", rest: "2 min" } : { sets: 3, reps: "10-12", target: "RPE 7", rest: "75 s" };
 }
-function buildEx(ex, selGoal, isAnchor, weightMap, minutes) {
-  var p = prescription(ex, selGoal, isAnchor, minutes);
+function pickConditioning(intensity, used, seed) {
+  var pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && e.intensity === intensity && !used[e.id]; });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && !used[e.id]; });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "conditioning"; });
+  return pool.length ? pool[Math.abs(seed) % pool.length] : null;
+}
+function buildEx(ex, goal, isAnchor, weightMap, minutes) {
+  var p = prescription(ex, goal, isAnchor, minutes);
   var w = weightMap[ex.name.toLowerCase()];
   return { name: ex.name, type: ex.type, equipment: ex.equipment, group: "", sets: p.sets, reps: p.reps, weight: (w && w > 0) ? w : 0, target: p.target, rest: p.rest, notes: ex.cue };
 }
@@ -900,12 +913,16 @@ function generateProgram(intake, weightMap, seed) {
   var goal = intake.goal || "general";
   var days = clampInt(intake.days, 1, 7, 4);
   var minutes = clampInt(intake.minutes, 15, 120, 60);
-  var includeMob = (intake.includes || []).indexOf("mobility") >= 0;
-  var includeCon = (intake.includes || []).indexOf("conditioning") >= 0;
+  var isHybrid = goal === "hybrid", isEnd = goal === "endurance";
+  var includeMob = isHybrid || isEnd || (intake.includes || []).indexOf("mobility") >= 0;
+  var includeCon = isHybrid || isEnd || (intake.includes || []).indexOf("conditioning") >= 0;
   var selGoal = goal === "hypertrophy" ? "hypertrophy" : goal === "strength" ? "strength" : "general";
 
   var slotsTotal = Math.max(3, Math.min(8, Math.round(minutes / 8)));
-  var strengthSlots = Math.max(2, slotsTotal - (includeMob ? 1 : 0) - (includeCon ? 1 : 0));
+  var strengthSlots;
+  if (isHybrid) strengthSlots = Math.max(2, Math.min(4, slotsTotal - 2));
+  else if (isEnd) strengthSlots = Math.max(1, Math.min(3, slotsTotal - 2));
+  else strengthSlots = Math.max(2, slotsTotal - (includeMob ? 1 : 0) - (includeCon ? 1 : 0));
 
   var roleList = splitForDays(days, goal);
   var totalOf = {}; roleList.forEach(function (r) { totalOf[r] = (totalOf[r] || 0) + 1; });
@@ -913,18 +930,23 @@ function generateProgram(intake, weightMap, seed) {
 
   var sessions = roleList.map(function (role, si) {
     var slots = ROLES[role] || ROLES.full;
-    var used = {}, exercises = [];
+    var used = {}, strengthEx = [], extraEx = [];
     for (var k = 0; k < strengthSlots; k++) {
       var slot = slots[k % slots.length];
       var ex = pickStrength(slot, selGoal, used, seed + si * 7 + k * 13);
-      if (ex) { used[ex.id] = 1; exercises.push(buildEx(ex, selGoal, k === 0, weightMap)); }
+      if (ex) { used[ex.id] = 1; strengthEx.push(buildEx(ex, goal, k === 0, weightMap)); }
     }
-    if (includeMob) { var mob = pickByType("mobility", used, seed + si * 3); if (mob) { used[mob.id] = 1; exercises.push(buildEx(mob, selGoal, false, weightMap)); } }
-    if (includeCon) { var con = pickByType("conditioning", used, seed + si * 5); if (con) { used[con.id] = 1; exercises.push(buildEx(con, selGoal, false, weightMap, minutes)); } }
-    if (minutes <= 45) assignSupersets(exercises);
+    // Research: strength FIRST, then conditioning, then mobility (cooldown).
+    if (includeCon) {
+      var intensity = isHybrid ? (si % 2 === 0 ? "z2" : "interval") : (isEnd ? (si % 2 === 0 ? "interval" : "z2") : "interval");
+      var con = pickConditioning(intensity, used, seed + si * 5);
+      if (con) { used[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes)); }
+    }
+    if (includeMob) { var mob = pickByType("mobility", used, seed + si * 3); if (mob) { used[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap)); } }
+    if (minutes <= 45) assignSupersets(strengthEx);
     seenOf[role] = (seenOf[role] || 0) + 1;
     var suffix = totalOf[role] > 1 ? " " + String.fromCharCode(64 + seenOf[role]) : "";
-    return { name: (ROLE_NAME[role] || "Day") + suffix, focus: ROLE_FOCUS[role] || "", exercises: exercises };
+    return { name: (ROLE_NAME[role] || "Day") + suffix, focus: ROLE_FOCUS[role] || "", exercises: strengthEx.concat(extraEx) };
   });
 
   var title = (GOAL_TEXT[goal] || "Workout") + " · " + days + "-day";
@@ -1230,12 +1252,14 @@ function generateProgram(intake, weightMap, seed) {
   }
   function buildPrefs() {
     var p = (state.buildPrefs && typeof state.buildPrefs === "object") ? state.buildPrefs : {};
+    var goal = ["hybrid", "strength", "endurance"].indexOf(p.goal) >= 0 ? p.goal : "hybrid";
+    var cardioGoal = goal === "hybrid" || goal === "endurance";
     state.buildPrefs = {
-      goal: ["hypertrophy", "strength", "general"].indexOf(p.goal) >= 0 ? p.goal : "hypertrophy",
+      goal: goal,
       days: clampInt(p.days, 1, 7, 4),
       minutes: [30, 45, 60].indexOf(p.minutes) >= 0 ? p.minutes : 45,
       mobility: p.mobility === undefined ? true : !!p.mobility,
-      conditioning: !!p.conditioning
+      conditioning: p.conditioning === undefined ? cardioGoal : !!p.conditioning
     };
     return state.buildPrefs;
   }
@@ -1311,7 +1335,7 @@ function generateProgram(intake, weightMap, seed) {
   $("closePlan").addEventListener("click", closePlan);
   planSheet.addEventListener("click", function (ev) { if (ev.target === planSheet) closePlan(); });
   $("buildBtn").addEventListener("click", onBuild);
-  $("bGoal").addEventListener("click", function (ev) { var b = ev.target.closest("[data-goal]"); if (!b) return; buildPrefs().goal = b.getAttribute("data-goal"); save(); syncBuild(); });
+  $("bGoal").addEventListener("click", function (ev) { var b = ev.target.closest("[data-goal]"); if (!b) return; var p = buildPrefs(); p.goal = b.getAttribute("data-goal"); if (p.goal === "hybrid" || p.goal === "endurance") { p.conditioning = true; p.mobility = true; } save(); syncBuild(); });
   $("bDays").addEventListener("click", function (ev) { var b = ev.target.closest("[data-days]"); if (!b) return; buildPrefs().days = parseInt(b.getAttribute("data-days"), 10); save(); syncBuild(); });
   $("bTime").addEventListener("click", function (ev) { var b = ev.target.closest("[data-min]"); if (!b) return; buildPrefs().minutes = parseInt(b.getAttribute("data-min"), 10); save(); syncBuild(); });
   $("bInclude").addEventListener("click", function (ev) { var b = ev.target.closest("[data-inc]"); if (!b) return; var k = b.getAttribute("data-inc"); var p = buildPrefs(); p[k] = !p[k]; save(); syncBuild(); });
