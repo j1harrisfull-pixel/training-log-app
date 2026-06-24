@@ -953,26 +953,32 @@ function generateProgram(intake, weightMap, seed) {
 
   var roleList = splitForDays(days, goal);
   var totalOf = {}; roleList.forEach(function (r) { totalOf[r] = (totalOf[r] || 0) + 1; });
-  var seenOf = {};
+  var occOf = {};
+  var weekUsed = {}; // shared across the whole week so a movement isn't repeated day to day
 
   var sessions = roleList.map(function (role, si) {
-    var slots = ROLES[role] || ROLES.full;
-    var used = {}, strengthEx = [], extraEx = [];
+    var occ = (occOf[role] = (occOf[role] || 0)); occOf[role]++;
+    var baseSlots = ROLES[role] || ROLES.full;
+    // Rotate the slot order each time a role repeats, so each day LEADS with a
+    // different pattern (squat-day vs hinge-day vs push-day) instead of the same
+    // heavy lift every session.
+    var rot = baseSlots.length ? occ % baseSlots.length : 0;
+    var slots = baseSlots.slice(rot).concat(baseSlots.slice(0, rot));
+    var strengthEx = [], extraEx = [];
     for (var k = 0; k < strengthSlots; k++) {
       var slot = slots[k % slots.length];
-      var ex = pickStrength(slot, selGoal, allowed, used, seed + si * 7 + k * 13);
-      if (ex) { used[ex.id] = 1; strengthEx.push(buildEx(ex, goal, k === 0, weightMap)); }
+      var ex = pickStrength(slot, selGoal, allowed, weekUsed, seed + si * 7 + k * 13);
+      if (ex) { weekUsed[ex.id] = 1; strengthEx.push(buildEx(ex, goal, k === 0, weightMap)); }
     }
     // Research: strength FIRST, then conditioning, then mobility (cooldown).
     if (includeCon) {
       var intensity = isHybrid ? (si % 2 === 0 ? "z2" : "interval") : (isEnd ? (si % 2 === 0 ? "interval" : "z2") : "interval");
-      var con = pickConditioning(intensity, allowed, used, seed + si * 5);
-      if (con) { used[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes)); }
+      var con = pickConditioning(intensity, allowed, weekUsed, seed + si * 5);
+      if (con) { weekUsed[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes)); }
     }
-    if (includeMob) { var mob = pickByType("mobility", allowed, used, seed + si * 3); if (mob) { used[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap)); } }
+    if (includeMob) { var mob = pickByType("mobility", allowed, weekUsed, seed + si * 3); if (mob) { weekUsed[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap)); } }
     if (minutes <= 45) assignSupersets(strengthEx);
-    seenOf[role] = (seenOf[role] || 0) + 1;
-    var suffix = totalOf[role] > 1 ? " " + String.fromCharCode(64 + seenOf[role]) : "";
+    var suffix = totalOf[role] > 1 ? " " + String.fromCharCode(65 + occ) : "";
     return { name: (ROLE_NAME[role] || "Day") + suffix, focus: ROLE_FOCUS[role] || "", exercises: strengthEx.concat(extraEx) };
   });
 
