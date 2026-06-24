@@ -228,6 +228,13 @@ dialog.sheet[open] { animation: sheetUp .3s cubic-bezier(.2,.8,.2,1); }
 .adv > summary::-webkit-details-marker { display: none; }
 .adv > summary::before { content: "▸ "; }
 .adv[open] > summary::before { content: "▾ "; }
+.bsect { margin-top: 16px; }
+.blabel { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-dim); font-weight: 700; margin-bottom: 8px; }
+.seg--full { display: flex; width: 100%; }
+.seg--full button { flex: 1 1 0; padding: 11px 6px; text-align: center; min-height: 44px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 999px; padding: 0 18px; min-height: 44px; font-size: 14px; font-weight: 600; color: var(--ink); transition: background .15s ease, border-color .15s ease, color .15s ease; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 /* superset grouping (no side-stripe, no nested card) */
 .superrun { display: flex; flex-direction: column; gap: 6px; }
@@ -311,9 +318,43 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   <div class="sheet__grip"></div>
   <div class="sheet__body">
     <h2>Build my week</h2>
-    <p class="sheet__lead">Tell me what you want and I'll build it instantly. Offline, no account, nothing to paste.</p>
-    <textarea class="pastebox" id="buildText" placeholder="e.g. 3 workouts this week, build muscle and mobility, 30-45 min" aria-label="Describe the week you want"></textarea>
-    <div class="btn-row" style="margin-top:10px"><button class="btn btn--primary" id="buildBtn" type="button">Build my week</button></div>
+    <p class="sheet__lead">Pick what you want. It builds instantly, offline, read-only.</p>
+
+    <div class="bsect">
+      <div class="blabel">Goal</div>
+      <div class="seg seg--full" id="bGoal" role="group" aria-label="Goal">
+        <button data-goal="hypertrophy" type="button">Muscle</button>
+        <button data-goal="strength" type="button">Strength</button>
+        <button data-goal="general" type="button">General</button>
+      </div>
+    </div>
+    <div class="bsect">
+      <div class="blabel">Days a week</div>
+      <div class="seg seg--full" id="bDays" role="group" aria-label="Days a week">
+        <button data-days="2" type="button">2</button>
+        <button data-days="3" type="button">3</button>
+        <button data-days="4" type="button">4</button>
+        <button data-days="5" type="button">5</button>
+        <button data-days="6" type="button">6</button>
+      </div>
+    </div>
+    <div class="bsect">
+      <div class="blabel">Time per session</div>
+      <div class="seg seg--full" id="bTime" role="group" aria-label="Time per session">
+        <button data-min="30" type="button">30 min</button>
+        <button data-min="45" type="button">45 min</button>
+        <button data-min="60" type="button">60 min</button>
+      </div>
+    </div>
+    <div class="bsect">
+      <div class="blabel">Include</div>
+      <div class="chips" id="bInclude" role="group" aria-label="Include">
+        <button class="chip" data-inc="mobility" type="button">Mobility</button>
+        <button class="chip" data-inc="conditioning" type="button">Cardio</button>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:16px"><button class="btn btn--primary" id="buildBtn" type="button">Build my week</button></div>
     <div class="preview hidden" id="buildPreview"></div>
 
     <details class="adv">
@@ -915,14 +956,14 @@ function generateProgram(intake, weightMap, seed) {
   }
   function freshState(program, opts) {
     opts = opts || {};
-    return { version: 2, unit: program.unit, theme: opts.theme || "system", program: program, activeWeek: 0, activeSession: 0, log: {}, archive: opts.archive || [], restMuted: false, activeExerciseId: null };
+    return { version: 2, unit: program.unit, theme: opts.theme || "system", program: program, activeWeek: 0, activeSession: 0, log: {}, archive: opts.archive || [], restMuted: false, activeExerciseId: null, buildPrefs: null };
   }
   function coerceState(parsed) {
     if (parsed && parsed.program) {
       var program = normalizeProgram(parsed.program);
       return { version: 2, unit: program.unit, theme: ["light", "dark", "system"].indexOf(parsed.theme) >= 0 ? parsed.theme : "system",
         program: program, activeWeek: clampInt(parsed.activeWeek, 0, program.weeks.length - 1, 0), activeSession: clampInt(parsed.activeSession, 0, 99, 0),
-        log: parsed.log && typeof parsed.log === "object" ? parsed.log : {}, archive: Array.isArray(parsed.archive) ? parsed.archive : [], restMuted: !!parsed.restMuted, activeExerciseId: parsed.activeExerciseId || null };
+        log: parsed.log && typeof parsed.log === "object" ? parsed.log : {}, archive: Array.isArray(parsed.archive) ? parsed.archive : [], restMuted: !!parsed.restMuted, activeExerciseId: parsed.activeExerciseId || null, buildPrefs: parsed.buildPrefs || null };
     }
     if (parsed && parsed.sessions) return migrateV1toV2(parsed);
     return null;
@@ -1187,20 +1228,42 @@ function generateProgram(intake, weightMap, seed) {
       "", "What I want next: "
     ].join("\n");
   }
+  function buildPrefs() {
+    var p = (state.buildPrefs && typeof state.buildPrefs === "object") ? state.buildPrefs : {};
+    state.buildPrefs = {
+      goal: ["hypertrophy", "strength", "general"].indexOf(p.goal) >= 0 ? p.goal : "hypertrophy",
+      days: clampInt(p.days, 1, 7, 4),
+      minutes: [30, 45, 60].indexOf(p.minutes) >= 0 ? p.minutes : 45,
+      mobility: p.mobility === undefined ? true : !!p.mobility,
+      conditioning: !!p.conditioning
+    };
+    return state.buildPrefs;
+  }
+  function syncBuild() {
+    var p = buildPrefs();
+    document.querySelectorAll("#bGoal button").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-goal") === p.goal); });
+    document.querySelectorAll("#bDays button").forEach(function (b) { b.setAttribute("aria-pressed", parseInt(b.getAttribute("data-days"), 10) === p.days); });
+    document.querySelectorAll("#bTime button").forEach(function (b) { b.setAttribute("aria-pressed", parseInt(b.getAttribute("data-min"), 10) === p.minutes); });
+    document.querySelectorAll("#bInclude button").forEach(function (b) { b.setAttribute("aria-pressed", !!p[b.getAttribute("data-inc")]); });
+  }
   function openPlan() {
     pending = null; pendingBuild = null;
     $("loadPreview").classList.add("hidden"); $("loadText").value = "";
     $("buildPreview").classList.add("hidden");
+    syncBuild();
     $("reqText").value = buildRequest();
     if (typeof planSheet.showModal === "function") planSheet.showModal(); else planSheet.setAttribute("open", "");
   }
   function onBuild() {
-    var intake = parseIntake($("buildText").value);
+    var p = buildPrefs(), includes = [];
+    if (p.mobility) includes.push("mobility");
+    if (p.conditioning) includes.push("conditioning");
+    var intake = { days: p.days, goal: p.goal, minutes: p.minutes, includes: includes, focus: [] };
     buildSeed++;
     pendingBuild = generateProgram(intake, buildWeightMap(state), buildSeed);
     var days = pendingBuild.weeks[0].sessions.length, pv = $("buildPreview");
     pv.innerHTML = '<div class="preview__title">' + esc(pendingBuild.title) + '</div>' +
-      '<div class="preview__meta">' + days + ' day' + (days > 1 ? "s" : "") + ' · assumed ' + esc(intake.assumptions.join(" · ")) + '</div>' +
+      '<div class="preview__meta">' + days + ' day' + (days > 1 ? "s" : "") + ' · ' + p.minutes + ' min · full gym assumed</div>' +
       '<div class="btn-row"><button class="btn btn--primary" id="confirmBuild" type="button">Use this week</button><button class="btn" id="rebuildBtn" type="button">Try again</button></div>';
     pv.classList.remove("hidden");
     $("confirmBuild").addEventListener("click", confirmBuild);
@@ -1248,6 +1311,10 @@ function generateProgram(intake, weightMap, seed) {
   $("closePlan").addEventListener("click", closePlan);
   planSheet.addEventListener("click", function (ev) { if (ev.target === planSheet) closePlan(); });
   $("buildBtn").addEventListener("click", onBuild);
+  $("bGoal").addEventListener("click", function (ev) { var b = ev.target.closest("[data-goal]"); if (!b) return; buildPrefs().goal = b.getAttribute("data-goal"); save(); syncBuild(); });
+  $("bDays").addEventListener("click", function (ev) { var b = ev.target.closest("[data-days]"); if (!b) return; buildPrefs().days = parseInt(b.getAttribute("data-days"), 10); save(); syncBuild(); });
+  $("bTime").addEventListener("click", function (ev) { var b = ev.target.closest("[data-min]"); if (!b) return; buildPrefs().minutes = parseInt(b.getAttribute("data-min"), 10); save(); syncBuild(); });
+  $("bInclude").addEventListener("click", function (ev) { var b = ev.target.closest("[data-inc]"); if (!b) return; var k = b.getAttribute("data-inc"); var p = buildPrefs(); p[k] = !p[k]; save(); syncBuild(); });
   $("copyReqBtn").addEventListener("click", copyRequest);
   $("loadBtn").addEventListener("click", onLoadClick);
 
