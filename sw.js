@@ -5,7 +5,7 @@
    - Google Fonts (CSS + font files): runtime cache, cache-first
    Bump CACHE_VERSION to ship a new shell. */
 
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 const SHELL_CACHE = `training-log-shell-${CACHE_VERSION}`;
 const FONT_CACHE = `training-log-fonts-${CACHE_VERSION}`;
 

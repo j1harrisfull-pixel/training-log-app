@@ -868,12 +868,27 @@ function equipOk(e, allowed) {
   if (allowed == null) return true; // no filter = full gym
   return allowed.indexOf(e.equipment) >= 0;
 }
-function pickStrength(slot, selGoal, allowed, used, seed) {
+var ALL_PATTERNS = ["squat", "hinge", "lunge", "hpush", "vpush", "hpull", "vpull", "biceps", "triceps", "calf", "core", "carry"];
+// The hip-hinge barbell/db lifts a lifter calls "a deadlift" — capped hard so they
+// never stack across the week (high axial fatigue + the user's explicit gripe).
+var DEADLIFT_FAMILY = ["deadlift", "trap-bar-deadlift", "romanian-deadlift", "dumbbell-rdl", "good-morning"];
+function pickStrength(slot, selGoal, allowed, ctx, seed, patCap, dlCap) {
+  function ok(e, pats, comp, useGoal) {
+    return e.type === "strength"
+      && pats.indexOf(e.pattern) >= 0
+      && (useGoal ? e.goals.indexOf(selGoal) >= 0 : true)
+      && equipOk(e, allowed)
+      && !ctx.used[e.id]
+      && (ctx.pat[e.pattern] || 0) < patCap
+      && !(DEADLIFT_FAMILY.indexOf(e.id) >= 0 && ctx.dl >= dlCap)
+      && (comp === null ? true : (comp ? e.compound : !e.compound));
+  }
   var pats = slot.patterns;
-  var pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && e.goals.indexOf(selGoal) >= 0 && equipOk(e, allowed) && !used[e.id] && (slot.compound ? e.compound : !e.compound); });
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && equipOk(e, allowed) && !used[e.id]; });
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && equipOk(e, allowed); });
-  if (!pool.length) return null; // no movement for this pattern with the available kit -> drop the slot
+  var pool = LIBRARY.filter(function (e) { return ok(e, pats, slot.compound, true); });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, pats, null, true); });        // relax compound
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, pats, null, false); });       // relax goal
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, ALL_PATTERNS, null, false); }); // any under-cap pattern -> keeps the week balanced
+  if (!pool.length) return null; // every pattern at cap -> drop the slot rather than overload one pattern
   return pool[Math.abs(seed) % pool.length];
 }
 function pickByType(type, allowed, used, seed) {
@@ -949,12 +964,15 @@ function generateProgram(intake, weightMap, seed) {
   var strengthSlots;
   if (isHybrid) strengthSlots = Math.max(2, Math.min(4, slotsTotal - 2));
   else if (isEnd) strengthSlots = Math.max(1, Math.min(3, slotsTotal - 2));
-  else strengthSlots = Math.max(2, slotsTotal - (includeMob ? 1 : 0) - (includeCon ? 1 : 0));
+  else strengthSlots = Math.max(2, Math.min(6, slotsTotal - (includeMob ? 1 : 0) - (includeCon ? 1 : 0)));
 
   var roleList = splitForDays(days, goal);
   var totalOf = {}; roleList.forEach(function (r) { totalOf[r] = (totalOf[r] || 0) + 1; });
   var occOf = {};
-  var weekUsed = {}; // shared across the whole week so a movement isn't repeated day to day
+  // Week-level state: used = exercise ids (no exact repeat); pat = per-pattern count
+  // (cap each movement pattern); dl = deadlift-family count (capped to 1).
+  var ctx = { used: {}, pat: {}, dl: 0 };
+  var patCap = days >= 5 ? 3 : 2;
 
   var sessions = roleList.map(function (role, si) {
     var occ = (occOf[role] = (occOf[role] || 0)); occOf[role]++;
@@ -967,16 +985,16 @@ function generateProgram(intake, weightMap, seed) {
     var strengthEx = [], extraEx = [];
     for (var k = 0; k < strengthSlots; k++) {
       var slot = slots[k % slots.length];
-      var ex = pickStrength(slot, selGoal, allowed, weekUsed, seed + si * 7 + k * 13);
-      if (ex) { weekUsed[ex.id] = 1; strengthEx.push(buildEx(ex, goal, k === 0, weightMap)); }
+      var ex = pickStrength(slot, selGoal, allowed, ctx, seed + si * 7 + k * 13, patCap, 1);
+      if (ex) { ctx.used[ex.id] = 1; ctx.pat[ex.pattern] = (ctx.pat[ex.pattern] || 0) + 1; if (DEADLIFT_FAMILY.indexOf(ex.id) >= 0) ctx.dl++; strengthEx.push(buildEx(ex, goal, k === 0, weightMap)); }
     }
     // Research: strength FIRST, then conditioning, then mobility (cooldown).
     if (includeCon) {
       var intensity = isHybrid ? (si % 2 === 0 ? "z2" : "interval") : (isEnd ? (si % 2 === 0 ? "interval" : "z2") : "interval");
-      var con = pickConditioning(intensity, allowed, weekUsed, seed + si * 5);
-      if (con) { weekUsed[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes)); }
+      var con = pickConditioning(intensity, allowed, ctx.used, seed + si * 5);
+      if (con) { ctx.used[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes)); }
     }
-    if (includeMob) { var mob = pickByType("mobility", allowed, weekUsed, seed + si * 3); if (mob) { weekUsed[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap)); } }
+    if (includeMob) { var mob = pickByType("mobility", allowed, ctx.used, seed + si * 3); if (mob) { ctx.used[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap)); } }
     if (minutes <= 45) assignSupersets(strengthEx);
     var suffix = totalOf[role] > 1 ? " " + String.fromCharCode(65 + occ) : "";
     return { name: (ROLE_NAME[role] || "Day") + suffix, focus: ROLE_FOCUS[role] || "", exercises: strengthEx.concat(extraEx) };
