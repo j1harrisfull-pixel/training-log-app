@@ -181,6 +181,10 @@ input, textarea { font: inherit; color: inherit; }
 .field-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-dim); font-weight: 700; margin-bottom: 6px; }
 .notes__text, .reps__input { width: 100%; background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; resize: vertical; line-height: 1.5; }
 .notes__text { min-height: 64px; }
+.cuebox { display: flex; flex-direction: column; gap: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; padding: 12px; }
+.cue-line { display: flex; gap: 10px; font-size: 13px; line-height: 1.45; color: var(--ink); }
+.cue-tag { flex: none; width: 44px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-ink); padding-top: 2px; }
+.cue-plain { font-size: 13px; line-height: 1.5; color: var(--ink); margin: 0; }
 .notes__text:focus, .reps__input:focus { border-color: var(--accent-ink); outline: none; }
 .scheme { display: flex; gap: 18px; align-items: flex-end; margin-top: 14px; flex-wrap: wrap; }
 .scheme__item { display: flex; flex-direction: column; }
@@ -1137,6 +1141,17 @@ function generateProgram(intake, weightMap, seed) {
     }
     return html;
   }
+  function formatCue(text) {
+    text = String(text || "").trim();
+    if (!text) return '<p class="cue-plain">Move with control.</p>';
+    var m = text.match(/setup:\s*([\s\S]*?)\s*key:\s*([\s\S]*?)\s*fault:\s*([\s\S]*)$/i);
+    if (m) {
+      return ["Setup", "Key", "Fault"].map(function (tag, idx) {
+        return '<div class="cue-line"><span class="cue-tag">' + tag + '</span><span>' + esc(m[idx + 1].replace(/^[\s.]+|[\s.]+$/g, "")) + '</span></div>';
+      }).join("");
+    }
+    return '<p class="cue-plain">' + esc(text) + '</p>';
+  }
   function buildCard(e, i, ses, badge) {
     var lg = readLog(ses, e), total = e.sets, doneCount = lg.done.filter(Boolean).length, complete = total > 0 && doneCount === total, unit = state.program.unit, ln = loadNote(e.equipment);
     var pills = pillsHtml(e, lg.done);
@@ -1152,7 +1167,7 @@ function generateProgram(intake, weightMap, seed) {
       '<div class="pills" role="group" aria-label="Sets — tap to log">' + pills + '</div>' + cue +
       '<button type="button" class="notes-toggle" data-act="notes" data-ex="' + e.id + '" aria-expanded="' + (e.notesOpen ? "true" : "false") + '" aria-controls="n-' + e.id + '"><span class="chev" aria-hidden="true">▸</span> Form notes' + (e.notes && e.notes.trim() ? ' <span class="dot" aria-hidden="true"></span>' : "") + '</button>' +
       '<div class="notes' + (e.notesOpen ? " is-open" : "") + '" id="n-' + e.id + '"><div class="notes__inner"><div class="notes__pad">' +
-      '<label class="field-label" for="cue-' + e.id + '">Form cues</label><textarea class="notes__text" id="cue-' + e.id + '" data-act="note" data-ex="' + e.id + '" placeholder="Cue yourself — brace, tempo, range…">' + esc(e.notes || "") + '</textarea>' +
+      '<label class="field-label">Technique</label><div class="cuebox">' + formatCue(e.notes) + '</div>' +
       '<div class="scheme"><div class="scheme__item"><span class="field-label">Sets</span><div class="stepper"><button type="button" class="step" data-act="sets-" data-ex="' + e.id + '" aria-label="One fewer set">−</button><span class="stepper__val">' + total + '</span><button type="button" class="step" data-act="sets+" data-ex="' + e.id + '" aria-label="One more set">+</button></div></div>' +
       '<div class="scheme__item"><label class="field-label" for="reps-' + e.id + '">Reps target</label><input class="reps__input mono" id="reps-' + e.id + '" type="text" value="' + esc(e.reps) + '" data-act="reps" data-ex="' + e.id + '" aria-label="Reps target"></div></div>' +
       '</div></div></div></article>';
@@ -1227,12 +1242,7 @@ function generateProgram(intake, weightMap, seed) {
     var el = ev.target, act = el.getAttribute("data-act"); if (!act) return;
     var e = findEx(el.getAttribute("data-ex")); if (!e) return; var ses = curSession();
     if (act === "wset") { var w = writeLog(ses, e); w.el.weight = roundW(Math.max(0, numOr(el.value, 0))); saveSoon(); }
-    else if (act === "note") {
-      e.notes = el.value; saveSoon();
-      var tog = listEl.querySelector('.notes-toggle[data-ex="' + e.id + '"]'), dot = tog.querySelector(".dot");
-      if (e.notes.trim() && !dot) tog.insertAdjacentHTML("beforeend", ' <span class="dot" aria-hidden="true"></span>');
-      else if (!e.notes.trim() && dot) dot.remove();
-    } else if (act === "reps") {
+    else if (act === "reps") {
       e.reps = el.value; saveSoon();
       el.closest(".card").querySelectorAll(".pill__reps").forEach(function (r) { r.textContent = e.reps; });
     }
