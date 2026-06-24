@@ -354,6 +354,22 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
       </div>
     </div>
 
+    <details class="adv" style="margin-top:14px">
+      <summary>My equipment</summary>
+      <div class="chips" id="bEquip" role="group" aria-label="Equipment I have" style="margin-top:12px">
+        <button class="chip" data-eq="barbell" type="button">Barbell</button>
+        <button class="chip" data-eq="dumbbell" type="button">Dumbbells</button>
+        <button class="chip" data-eq="kettlebell" type="button">Kettlebells</button>
+        <button class="chip" data-eq="cable" type="button">Cable</button>
+        <button class="chip" data-eq="machine" type="button">Machines</button>
+        <button class="chip" data-eq="band" type="button">Bands</button>
+        <button class="chip" data-eq="pullup-bar" type="button">Pull-up bar</button>
+        <button class="chip" data-eq="cardio" type="button">Cardio machine</button>
+        <button class="chip" data-eq="sled" type="button">Sled</button>
+      </div>
+      <p class="sect__hint" style="margin-top:8px">Bodyweight is always included. Tap off anything you don't have.</p>
+    </details>
+
     <div class="btn-row" style="margin-top:16px"><button class="btn btn--primary" id="buildBtn" type="button">Build my week</button></div>
     <div class="preview hidden" id="buildPreview"></div>
 
@@ -451,7 +467,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function fmtDate(iso) { try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }); } catch (e) { return "—"; } }
   var EX_TYPES = ["strength", "mobility", "conditioning"];
-  var EQUIPMENTS = ["barbell", "dumbbell", "machine", "cable", "kettlebell", "bodyweight", "band", "smith"];
+  var EQUIPMENTS = ["barbell", "dumbbell", "machine", "cable", "kettlebell", "bodyweight", "band", "smith", "pullup-bar", "cardio", "sled"];
 
   function extractFirstJsonObject(s) {
     var start = s.indexOf("{"); if (start < 0) return null;
@@ -509,8 +525,9 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   function loadNote(equipment) {
     switch (equipment) {
       case "dumbbell": case "kettlebell": return "each · per hand";
-      case "barbell": case "machine": case "cable": case "smith": case "band": return "total";
-      case "bodyweight": return "bodyweight";
+      case "barbell": case "machine": case "cable": case "smith": case "band": case "sled": return "total";
+      case "bodyweight": case "pullup-bar": return "bodyweight";
+      case "cardio": return "";
       default: return "";
     }
   }
@@ -662,7 +679,7 @@ const LIBRARY = [
   { id: "push-up", name: "Push-Up", type: "strength", equipment: "bodyweight", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: hands under shoulders, body in one line, glutes tight. Key: lower the chest to the floor, elbows ~45 degrees, press away. Fault: sagging hips or flaring elbows." },
   { id: "cable-fly", name: "Cable Fly", type: "strength", equipment: "cable", pattern: "hpush", muscles: ["chest"], compound: false, goals: I, unit: "reps", cue: "Setup: slight forward lean, soft elbows. Key: hug the arms together, squeeze the chest, control the stretch. Fault: turning it into a press by bending the elbows." },
   { id: "pec-deck", name: "Pec Deck", type: "strength", equipment: "machine", pattern: "hpush", muscles: ["chest"], compound: false, goals: I, unit: "reps", cue: "Setup: forearms on the pads, chest up. Key: bring the pads together, squeeze, slow return. Fault: using the shoulders or going too heavy." },
-  { id: "chest-dip", name: "Chest Dip", type: "strength", equipment: "bodyweight", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: slight forward lean on the bars. Key: lower to a chest stretch, press to lockout. Fault: shrugging into the shoulders or too shallow." },
+  { id: "chest-dip", name: "Chest Dip", type: "strength", equipment: "pullup-bar", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: slight forward lean on the bars. Key: lower to a chest stretch, press to lockout. Fault: shrugging into the shoulders or too shallow." },
 
   // ---------- VERTICAL PUSH / shoulders ----------
   { id: "overhead-press", name: "Overhead Press", type: "strength", equipment: "barbell", pattern: "vpush", muscles: ["shoulders", "triceps"], compound: true, goals: C, unit: "reps", cue: "Setup: bar on the front delts, glutes and abs tight, bar over mid-foot. Key: press up, move the head through at lockout. Fault: leaning back into a layback or pressing around the face." },
@@ -683,8 +700,8 @@ const LIBRARY = [
   { id: "face-pull", name: "Face Pull", type: "strength", equipment: "cable", pattern: "hpull", muscles: ["shoulders", "back"], compound: false, goals: I, unit: "reps", cue: "Setup: rope at face height, light weight. Key: pull to the forehead, hands split wide, squeeze the rear delts. Fault: turning it into a row with heavy load." },
 
   // ---------- VERTICAL PULL / lats ----------
-  { id: "pull-up", name: "Pull-Up", type: "strength", equipment: "bodyweight", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: C, unit: "reps", cue: "Setup: full hang, shoulders active. Key: drive the elbows down, chin over the bar, control the lower. Fault: kipping or half reps. Add load when reps come easy." },
-  { id: "chin-up", name: "Chin-Up", type: "strength", equipment: "bodyweight", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: C, unit: "reps", cue: "Setup: underhand grip, full hang. Key: pull the chest to the bar, squeeze, lower under control. Fault: swinging or not reaching full extension." },
+  { id: "pull-up", name: "Pull-Up", type: "strength", equipment: "pullup-bar", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: C, unit: "reps", cue: "Setup: full hang, shoulders active. Key: drive the elbows down, chin over the bar, control the lower. Fault: kipping or half reps. Add load when reps come easy." },
+  { id: "chin-up", name: "Chin-Up", type: "strength", equipment: "pullup-bar", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: C, unit: "reps", cue: "Setup: underhand grip, full hang. Key: pull the chest to the bar, squeeze, lower under control. Fault: swinging or not reaching full extension." },
   { id: "lat-pulldown", name: "Lat Pulldown", type: "strength", equipment: "cable", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: I, unit: "reps", cue: "Setup: thighs pinned, slight lean back. Key: drive the elbows to the ribs, bar to the upper chest, control up. Fault: leaning way back and heaving with the body." },
   { id: "neutral-grip-pulldown", name: "Neutral-Grip Pulldown", type: "strength", equipment: "cable", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: I, unit: "reps", cue: "Setup: neutral handle, tall chest. Key: pull to the upper chest, elbows down and in, squeeze. Fault: rounding forward or using momentum." },
   { id: "straight-arm-pulldown", name: "Straight-Arm Pulldown", type: "strength", equipment: "cable", pattern: "vpull", muscles: ["back"], compound: false, goals: I, unit: "reps", cue: "Setup: bar high, soft elbows, hinge slightly. Key: drive the bar to the thighs with the lats, squeeze. Fault: bending the elbows into a pushdown." },
@@ -711,7 +728,7 @@ const LIBRARY = [
 
   // ---------- CORE ----------
   { id: "plank", name: "Plank", type: "strength", equipment: "bodyweight", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "sec", cue: "Setup: forearms under shoulders, body in one line. Key: brace the abs and glutes, ribs down, breathe. Fault: hips sagging or piking up." },
-  { id: "hanging-leg-raise", name: "Hanging Leg Raise", type: "strength", equipment: "bodyweight", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: full hang, shoulders active. Key: curl the pelvis up, raise the legs with control, slow lower. Fault: swinging or using momentum." },
+  { id: "hanging-leg-raise", name: "Hanging Leg Raise", type: "strength", equipment: "pullup-bar", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: full hang, shoulders active. Key: curl the pelvis up, raise the legs with control, slow lower. Fault: swinging or using momentum." },
   { id: "cable-crunch", name: "Cable Crunch", type: "strength", equipment: "cable", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: kneel, rope by the head. Key: crunch the ribs to the pelvis, round the spine, squeeze. Fault: hinging at the hips instead of flexing the spine." },
   { id: "ab-wheel", name: "Ab Wheel Rollout", type: "strength", equipment: "bodyweight", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: kneel, wheel under the shoulders. Key: brace hard, roll out only as far as you can keep a flat back, pull back. Fault: letting the lower back arch and sag." },
   { id: "pallof-press", name: "Pallof Press", type: "strength", equipment: "cable", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: side-on to a cable at chest height. Key: press straight out and resist the rotation, brace. Fault: letting the torso twist toward the cable." },
@@ -736,13 +753,16 @@ const LIBRARY = [
   { id: "wrist-prep", name: "Wrist Prep Rocks", type: "mobility", equipment: "bodyweight", pattern: "wrist-mobility", muscles: ["wrists"], compound: false, goals: MOB, unit: "reps", cue: "Setup: hands flat on the floor, fingers various directions. Key: rock gently to load the wrists, build range slowly. Fault: forcing into pain." },
 
   // ---------- CONDITIONING (intensity: z2 = steady aerobic base, interval = hard) ----------
-  { id: "zone2-bike", name: "Zone 2 Bike", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: easy resistance, seat level with the hip. Key: hold a conversational pace, nose-breathe, smooth cadence the whole block. Fault: drifting too hard so you couldn't hold a conversation." },
-  { id: "zone2-row", name: "Zone 2 Row", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: strapped in, tall posture, low drag. Key: legs-back-arms at an easy steady pace you can talk through. Fault: pulling too hard and creeping out of Zone 2." },
-  { id: "incline-walk", name: "Incline Treadmill Walk", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: steep incline, brisk but easy pace. Key: tall posture, no holding the rails, breathe through the nose. Fault: leaning on the handrails and killing the effort." },
-  { id: "bike-intervals", name: "Bike Intervals", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: seat level with the hip. Key: hard efforts with easy spins between, near-full recovery before the next. Fault: starting too hard and fading across the set." },
-  { id: "row-intervals", name: "Rower Intervals", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: strapped in, tall posture. Key: powerful legs-then-back-then-arms on the drive, controlled recovery. Fault: yanking with the arms first or rounding the back." },
-  { id: "sled-push", name: "Sled Push", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["legs", "full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: low arms, lean into the sled. Key: drive with short powerful steps, full leg extension. Fault: standing too upright and stalling." },
+  { id: "zone2-bike", name: "Zone 2 Bike", type: "conditioning", equipment: "cardio", pattern: "conditioning", muscles: ["full body"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: easy resistance, seat level with the hip. Key: hold a conversational pace, nose-breathe, smooth cadence the whole block. Fault: drifting too hard so you couldn't hold a conversation." },
+  { id: "zone2-row", name: "Zone 2 Row", type: "conditioning", equipment: "cardio", pattern: "conditioning", muscles: ["full body"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: strapped in, tall posture, low drag. Key: legs-back-arms at an easy steady pace you can talk through. Fault: pulling too hard and creeping out of Zone 2." },
+  { id: "incline-walk", name: "Incline Treadmill Walk", type: "conditioning", equipment: "cardio", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: steep incline, brisk but easy pace. Key: tall posture, no holding the rails, breathe through the nose. Fault: leaning on the handrails and killing the effort." },
+  { id: "bike-intervals", name: "Bike Intervals", type: "conditioning", equipment: "cardio", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: seat level with the hip. Key: hard efforts with easy spins between, near-full recovery before the next. Fault: starting too hard and fading across the set." },
+  { id: "row-intervals", name: "Rower Intervals", type: "conditioning", equipment: "cardio", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: strapped in, tall posture. Key: powerful legs-then-back-then-arms on the drive, controlled recovery. Fault: yanking with the arms first or rounding the back." },
+  { id: "sled-push", name: "Sled Push", type: "conditioning", equipment: "sled", pattern: "conditioning", muscles: ["legs", "full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: low arms, lean into the sled. Key: drive with short powerful steps, full leg extension. Fault: standing too upright and stalling." },
   { id: "kb-complex", name: "Kettlebell Complex", type: "conditioning", equipment: "kettlebell", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "reps", intensity: "interval", cue: "Setup: one bell, clear space. Key: flow swing to clean to press without resting, brace throughout. Fault: letting form slip as fatigue sets in." },
+  { id: "easy-jog", name: "Easy Jog / Brisk Walk", type: "conditioning", equipment: "bodyweight", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", intensity: "z2", cue: "Setup: relaxed posture, soft cadence. Key: hold a pace you could chat at, nose-breathe, stay even. Fault: drifting faster until you're out of Zone 2." },
+  { id: "burpees", name: "Burpees", type: "conditioning", equipment: "bodyweight", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "reps", intensity: "interval", cue: "Setup: clear floor space. Key: chest to floor, drive up, jump and reach tall, repeat with rhythm. Fault: sagging hips on the floor or skipping full extension." },
+  { id: "mountain-climbers", name: "Mountain Climbers", type: "conditioning", equipment: "bodyweight", pattern: "conditioning", muscles: ["core", "full body"], compound: true, goals: CON, unit: "sec", intensity: "interval", cue: "Setup: strong plank, hands under shoulders. Key: drive the knees fast, hips low and level, brace the core. Fault: hips bouncing up or shoulders drifting back." },
 ];
 
 function parseIntake(text) {
@@ -842,18 +862,24 @@ function splitForDays(days, goal) {
   }
 }
 
-function pickStrength(slot, selGoal, used, seed) {
+function equipOk(e, allowed) {
+  if (!e) return false;
+  if (e.equipment === "bodyweight") return true;
+  if (allowed == null) return true; // no filter = full gym
+  return allowed.indexOf(e.equipment) >= 0;
+}
+function pickStrength(slot, selGoal, allowed, used, seed) {
   var pats = slot.patterns;
-  var pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && e.goals.indexOf(selGoal) >= 0 && !used[e.id] && (slot.compound ? e.compound : !e.compound); });
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && !used[e.id]; });
-  if (!pool.length) return null;
+  var pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && e.goals.indexOf(selGoal) >= 0 && equipOk(e, allowed) && !used[e.id] && (slot.compound ? e.compound : !e.compound); });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && equipOk(e, allowed) && !used[e.id]; });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && equipOk(e, allowed); });
+  if (!pool.length) return null; // no movement for this pattern with the available kit -> drop the slot
   return pool[Math.abs(seed) % pool.length];
 }
-function pickByType(type, used, seed) {
-  var pool = LIBRARY.filter(function (e) { return e.type === type && !used[e.id]; });
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === type; });
-  if (!pool.length) return null;
-  return pool[Math.abs(seed) % pool.length];
+function pickByType(type, allowed, used, seed) {
+  var pool = LIBRARY.filter(function (e) { return e.type === type && equipOk(e, allowed) && !used[e.id]; });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === type && equipOk(e, allowed); });
+  return pool.length ? pool[Math.abs(seed) % pool.length] : null;
 }
 function prescription(ex, goal, isAnchor, minutes) {
   if (ex.type === "mobility") return { sets: 2, reps: ex.unit === "sec" ? "30s" : "8-10", target: "", rest: "" };
@@ -868,10 +894,10 @@ function prescription(ex, goal, isAnchor, minutes) {
   if (goal === "endurance") return { sets: 3, reps: "15-20", target: "RPE 8", rest: "45 s" };
   return anchor ? { sets: 3, reps: "8-10", target: "RPE 7", rest: "2 min" } : { sets: 3, reps: "10-12", target: "RPE 7", rest: "75 s" };
 }
-function pickConditioning(intensity, used, seed) {
-  var pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && e.intensity === intensity && !used[e.id]; });
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && !used[e.id]; });
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "conditioning"; });
+function pickConditioning(intensity, allowed, used, seed) {
+  var pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && e.intensity === intensity && equipOk(e, allowed) && !used[e.id]; });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && equipOk(e, allowed) && !used[e.id]; });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && equipOk(e, allowed); });
   return pool.length ? pool[Math.abs(seed) % pool.length] : null;
 }
 function buildEx(ex, goal, isAnchor, weightMap, minutes) {
@@ -914,6 +940,7 @@ function generateProgram(intake, weightMap, seed) {
   var days = clampInt(intake.days, 1, 7, 4);
   var minutes = clampInt(intake.minutes, 15, 120, 60);
   var isHybrid = goal === "hybrid", isEnd = goal === "endurance";
+  var allowed = Array.isArray(intake.equipment) ? intake.equipment : null;
   var includeMob = isHybrid || isEnd || (intake.includes || []).indexOf("mobility") >= 0;
   var includeCon = isHybrid || isEnd || (intake.includes || []).indexOf("conditioning") >= 0;
   var selGoal = goal === "hypertrophy" ? "hypertrophy" : goal === "strength" ? "strength" : "general";
@@ -933,16 +960,16 @@ function generateProgram(intake, weightMap, seed) {
     var used = {}, strengthEx = [], extraEx = [];
     for (var k = 0; k < strengthSlots; k++) {
       var slot = slots[k % slots.length];
-      var ex = pickStrength(slot, selGoal, used, seed + si * 7 + k * 13);
+      var ex = pickStrength(slot, selGoal, allowed, used, seed + si * 7 + k * 13);
       if (ex) { used[ex.id] = 1; strengthEx.push(buildEx(ex, goal, k === 0, weightMap)); }
     }
     // Research: strength FIRST, then conditioning, then mobility (cooldown).
     if (includeCon) {
       var intensity = isHybrid ? (si % 2 === 0 ? "z2" : "interval") : (isEnd ? (si % 2 === 0 ? "interval" : "z2") : "interval");
-      var con = pickConditioning(intensity, used, seed + si * 5);
+      var con = pickConditioning(intensity, allowed, used, seed + si * 5);
       if (con) { used[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes)); }
     }
-    if (includeMob) { var mob = pickByType("mobility", used, seed + si * 3); if (mob) { used[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap)); } }
+    if (includeMob) { var mob = pickByType("mobility", allowed, used, seed + si * 3); if (mob) { used[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap)); } }
     if (minutes <= 45) assignSupersets(strengthEx);
     seenOf[role] = (seenOf[role] || 0) + 1;
     var suffix = totalOf[role] > 1 ? " " + String.fromCharCode(64 + seenOf[role]) : "";
@@ -1250,16 +1277,19 @@ function generateProgram(intake, weightMap, seed) {
       "", "What I want next: "
     ].join("\n");
   }
+  var EQUIP_ALL = ["barbell", "dumbbell", "kettlebell", "cable", "machine", "band", "pullup-bar", "cardio", "sled"];
   function buildPrefs() {
     var p = (state.buildPrefs && typeof state.buildPrefs === "object") ? state.buildPrefs : {};
     var goal = ["hybrid", "strength", "endurance"].indexOf(p.goal) >= 0 ? p.goal : "hybrid";
     var cardioGoal = goal === "hybrid" || goal === "endurance";
+    var equip = Array.isArray(p.equipment) ? p.equipment.filter(function (x) { return EQUIP_ALL.indexOf(x) >= 0; }) : EQUIP_ALL.filter(function (x) { return x !== "sled"; });
     state.buildPrefs = {
       goal: goal,
       days: clampInt(p.days, 1, 7, 4),
       minutes: [30, 45, 60].indexOf(p.minutes) >= 0 ? p.minutes : 45,
       mobility: p.mobility === undefined ? true : !!p.mobility,
-      conditioning: p.conditioning === undefined ? cardioGoal : !!p.conditioning
+      conditioning: p.conditioning === undefined ? cardioGoal : !!p.conditioning,
+      equipment: equip
     };
     return state.buildPrefs;
   }
@@ -1269,6 +1299,7 @@ function generateProgram(intake, weightMap, seed) {
     document.querySelectorAll("#bDays button").forEach(function (b) { b.setAttribute("aria-pressed", parseInt(b.getAttribute("data-days"), 10) === p.days); });
     document.querySelectorAll("#bTime button").forEach(function (b) { b.setAttribute("aria-pressed", parseInt(b.getAttribute("data-min"), 10) === p.minutes); });
     document.querySelectorAll("#bInclude button").forEach(function (b) { b.setAttribute("aria-pressed", !!p[b.getAttribute("data-inc")]); });
+    document.querySelectorAll("#bEquip button").forEach(function (b) { b.setAttribute("aria-pressed", p.equipment.indexOf(b.getAttribute("data-eq")) >= 0); });
   }
   function openPlan() {
     pending = null; pendingBuild = null;
@@ -1282,7 +1313,7 @@ function generateProgram(intake, weightMap, seed) {
     var p = buildPrefs(), includes = [];
     if (p.mobility) includes.push("mobility");
     if (p.conditioning) includes.push("conditioning");
-    var intake = { days: p.days, goal: p.goal, minutes: p.minutes, includes: includes, focus: [] };
+    var intake = { days: p.days, goal: p.goal, minutes: p.minutes, includes: includes, focus: [], equipment: p.equipment };
     buildSeed++;
     pendingBuild = generateProgram(intake, buildWeightMap(state), buildSeed);
     var days = pendingBuild.weeks[0].sessions.length, pv = $("buildPreview");
@@ -1339,6 +1370,7 @@ function generateProgram(intake, weightMap, seed) {
   $("bDays").addEventListener("click", function (ev) { var b = ev.target.closest("[data-days]"); if (!b) return; buildPrefs().days = parseInt(b.getAttribute("data-days"), 10); save(); syncBuild(); });
   $("bTime").addEventListener("click", function (ev) { var b = ev.target.closest("[data-min]"); if (!b) return; buildPrefs().minutes = parseInt(b.getAttribute("data-min"), 10); save(); syncBuild(); });
   $("bInclude").addEventListener("click", function (ev) { var b = ev.target.closest("[data-inc]"); if (!b) return; var k = b.getAttribute("data-inc"); var p = buildPrefs(); p[k] = !p[k]; save(); syncBuild(); });
+  $("bEquip").addEventListener("click", function (ev) { var b = ev.target.closest("[data-eq]"); if (!b) return; var k = b.getAttribute("data-eq"); var p = buildPrefs(); var i = p.equipment.indexOf(k); if (i >= 0) p.equipment.splice(i, 1); else p.equipment.push(k); save(); syncBuild(); });
   $("copyReqBtn").addEventListener("click", copyRequest);
   $("loadBtn").addEventListener("click", onLoadClick);
 
