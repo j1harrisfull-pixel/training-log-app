@@ -223,6 +223,11 @@ dialog.sheet[open] { animation: sheetUp .3s cubic-bezier(.2,.8,.2,1); }
 .sheet__about { font-size: 12px; color: var(--ink-dim); text-align: center; margin-top: 6px; letter-spacing: .02em; }
 .sheet__close { width: 100%; margin-top: 4px; }
 .hidden { display: none !important; }
+.adv { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 6px; }
+.adv > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink-dim); padding: 8px 2px; list-style: none; }
+.adv > summary::-webkit-details-marker { display: none; }
+.adv > summary::before { content: "▸ "; }
+.adv[open] > summary::before { content: "▾ "; }
 
 /* superset grouping (no side-stripe, no nested card) */
 .superrun { display: flex; flex-direction: column; gap: 6px; }
@@ -305,23 +310,27 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
 <dialog class="sheet" id="planSheet" aria-label="Get or load a workout">
   <div class="sheet__grip"></div>
   <div class="sheet__body">
-    <h2>Workout from Claude</h2>
-    <p class="sheet__lead">Ask Claude in your normal chat, then paste the reply here. Nothing leaves your phone; no account needed.</p>
+    <h2>Build my week</h2>
+    <p class="sheet__lead">Tell me what you want and I'll build it instantly. Offline, no account, nothing to paste.</p>
+    <textarea class="pastebox" id="buildText" placeholder="e.g. 3 workouts this week, build muscle and mobility, 30-45 min" aria-label="Describe the week you want"></textarea>
+    <div class="btn-row" style="margin-top:10px"><button class="btn btn--primary" id="buildBtn" type="button">Build my week</button></div>
+    <div class="preview hidden" id="buildPreview"></div>
 
-    <div class="sect">
-      <div class="sect__step"><span class="sect__num">1</span><span class="sect__label" style="margin:0">Copy this, paste it to Claude</span></div>
-      <p class="sect__hint">It includes your progress so far and the exact format. Add what you want at the end, then send.</p>
-      <textarea class="codebox" id="reqText" readonly aria-label="Request to copy for Claude"></textarea>
-      <div class="btn-row" style="margin-top:10px"><button class="btn btn--primary" id="copyReqBtn" type="button">Copy request</button></div>
-    </div>
-
-    <div class="sect">
-      <div class="sect__step"><span class="sect__num">2</span><span class="sect__label" style="margin:0">Paste Claude's reply</span></div>
-      <p class="sect__hint">Copy the whole workout block Claude sends back and paste it in.</p>
-      <textarea class="pastebox" id="loadText" placeholder="Paste the workout Claude gave you…" aria-label="Paste Claude's workout"></textarea>
-      <div class="btn-row" style="margin-top:10px"><button class="btn" id="loadBtn" type="button">Load workout</button></div>
-      <div class="preview hidden" id="loadPreview"></div>
-    </div>
+    <details class="adv">
+      <summary>Advanced: import from Claude</summary>
+      <div class="sect" style="margin-top:14px">
+        <div class="sect__step"><span class="sect__num">1</span><span class="sect__label" style="margin:0">Copy this, paste it to Claude</span></div>
+        <p class="sect__hint">Includes your progress and the exact format. Add what you want, then send.</p>
+        <textarea class="codebox" id="reqText" readonly aria-label="Request to copy for Claude"></textarea>
+        <div class="btn-row" style="margin-top:10px"><button class="btn" id="copyReqBtn" type="button">Copy request</button></div>
+      </div>
+      <div class="sect">
+        <div class="sect__step"><span class="sect__num">2</span><span class="sect__label" style="margin:0">Paste Claude's reply</span></div>
+        <textarea class="pastebox" id="loadText" placeholder="Paste the workout Claude gave you…" aria-label="Paste Claude's workout"></textarea>
+        <div class="btn-row" style="margin-top:10px"><button class="btn" id="loadBtn" type="button">Load workout</button></div>
+        <div class="preview hidden" id="loadPreview"></div>
+      </div>
+    </details>
 
     <button class="btn sheet__close" id="closePlan" type="button">Done</button>
   </div>
@@ -564,6 +573,323 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     if (!logged) out.push("(Nothing logged yet.)");
     return out.join("\n").trim();
   }
+
+  /*__COACH_START__*/
+// Training Log — exercise library (single source; embedded into index.html).
+// Every entry: id, name, type, equipment, pattern, muscles[], compound, goals[], unit, cue.
+// cue is an elite technique note: "Setup: ... Key: ... Fault: ..."
+// goals: which goals the move suits. mobility/conditioning are their own goals.
+const C = ["hypertrophy", "strength", "general"]; // compound lifts
+const I = ["hypertrophy", "general"];              // isolation/accessory
+const MOB = ["mobility"];
+const CON = ["conditioning"];
+
+const LIBRARY = [
+  // ---------- SQUAT / quads ----------
+  { id: "back-squat", name: "Back Squat", type: "strength", equipment: "barbell", pattern: "squat", muscles: ["quads", "glutes"], compound: true, goals: C, unit: "reps", cue: "Setup: bar on rear delts, brace hard, feet shoulder-width. Key: sit between the hips, knees track over toes, drive the floor away. Fault: knees caving or hips shooting up first." },
+  { id: "front-squat", name: "Front Squat", type: "strength", equipment: "barbell", pattern: "squat", muscles: ["quads"], compound: true, goals: C, unit: "reps", cue: "Setup: bar on front delts, elbows high. Key: stay upright, knees forward, full depth. Fault: elbows dropping and the bar rolling forward." },
+  { id: "goblet-squat", name: "Goblet Squat", type: "strength", equipment: "dumbbell", pattern: "squat", muscles: ["quads", "glutes"], compound: true, goals: C, unit: "reps", cue: "Setup: hold one bell at the chest, elbows tucked. Key: sit straight down, elbows inside the knees at the bottom. Fault: heels lifting or chest collapsing." },
+  { id: "hack-squat", name: "Hack Squat", type: "strength", equipment: "machine", pattern: "squat", muscles: ["quads"], compound: true, goals: I, unit: "reps", cue: "Setup: shoulders and back flat to the pad, feet mid-platform. Key: deep, controlled descent, drive through the whole foot. Fault: bouncing out of the bottom or half reps." },
+  { id: "leg-press", name: "Leg Press", type: "strength", equipment: "machine", pattern: "squat", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: feet shoulder-width mid-platform, lower back flat. Key: lower until knees near chest, press without locking out hard. Fault: lower back rounding off the seat at the bottom." },
+  { id: "leg-extension", name: "Leg Extension", type: "strength", equipment: "machine", pattern: "squat", muscles: ["quads"], compound: false, goals: I, unit: "reps", cue: "Setup: knee joint in line with the pivot, sit tall. Key: extend fully, squeeze at the top, control down. Fault: swinging or using momentum." },
+
+  // ---------- LUNGE / unilateral ----------
+  { id: "bulgarian-split-squat", name: "Bulgarian Split Squat", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: rear foot on a bench, weight on the front leg. Key: drop straight down, tall torso, drive through the front heel. Fault: pushing off the back foot or short range." },
+  { id: "walking-lunge", name: "Walking Lunge", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: dumbbells at sides, tall posture. Key: long step, back knee toward the floor, push through the front heel. Fault: short choppy steps or front knee collapsing in." },
+  { id: "reverse-lunge", name: "Reverse Lunge", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: dumbbells at sides. Key: step back, drop the back knee, drive the front heel to return. Fault: leaning forward or losing balance." },
+  { id: "step-up", name: "Dumbbell Step-Up", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: box at knee height, dumbbells at sides. Key: drive fully through the top foot, no push off the bottom. Fault: bouncing off the trailing leg." },
+
+  // ---------- HINGE / posterior ----------
+  { id: "deadlift", name: "Deadlift", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["hamstrings", "glutes", "back"], compound: true, goals: C, unit: "reps", cue: "Setup: bar over mid-foot, shins close, lats tight. Key: take the slack out, push the floor away, hips and chest rise together. Fault: hips shooting up so it becomes a stiff-leg pull." },
+  { id: "trap-bar-deadlift", name: "Trap-Bar Deadlift", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["quads", "glutes", "back"], compound: true, goals: C, unit: "reps", cue: "Setup: stand centred, grip the handles, chest up. Key: push the floor away, stand tall, control the lower. Fault: rounding the back or jerking off the floor." },
+  { id: "romanian-deadlift", name: "Romanian Deadlift", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["hamstrings", "glutes"], compound: true, goals: C, unit: "reps", cue: "Setup: soft knees, bar against the thighs. Key: push the hips back, bar drags down the legs, feel the hamstrings load. Fault: turning it into a squat or rounding the lower back." },
+  { id: "dumbbell-rdl", name: "Dumbbell RDL", type: "strength", equipment: "dumbbell", pattern: "hinge", muscles: ["hamstrings", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: dumbbells in front of the thighs, soft knees. Key: hinge the hips back, flat back, dumbbells close to the legs. Fault: bending the knees instead of hinging." },
+  { id: "hip-thrust", name: "Hip Thrust", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: upper back on a bench, bar over the hips, chin tucked. Key: drive the hips to full lockout, ribs down, squeeze. Fault: over-arching the lower back instead of squeezing glutes." },
+  { id: "glute-bridge", name: "Glute Bridge", type: "strength", equipment: "bodyweight", pattern: "hinge", muscles: ["glutes"], compound: false, goals: I, unit: "reps", cue: "Setup: on the floor, heels close to the hips. Key: drive through the heels to full lockout, posterior tilt. Fault: pushing through the toes or hyperextending the spine." },
+  { id: "back-extension", name: "Back Extension", type: "strength", equipment: "machine", pattern: "hinge", muscles: ["glutes", "hamstrings", "back"], compound: false, goals: I, unit: "reps", cue: "Setup: pads at the hip crease. Key: hinge from the hips, squeeze glutes to come up, neutral spine. Fault: hyperextending or yanking up with the lower back." },
+  { id: "seated-leg-curl", name: "Seated Leg Curl", type: "strength", equipment: "machine", pattern: "hinge", muscles: ["hamstrings"], compound: false, goals: I, unit: "reps", cue: "Setup: knee joint on the pivot, thighs pinned. Key: curl fully, squeeze, slow the return. Fault: lifting the hips or rushing the eccentric." },
+  { id: "lying-leg-curl", name: "Lying Leg Curl", type: "strength", equipment: "machine", pattern: "hinge", muscles: ["hamstrings"], compound: false, goals: I, unit: "reps", cue: "Setup: hips flat, pad on the lower calf. Key: curl with control, full squeeze, slow lower. Fault: hips lifting off the pad." },
+  { id: "kettlebell-swing", name: "Kettlebell Swing", type: "strength", equipment: "kettlebell", pattern: "hinge", muscles: ["glutes", "hamstrings"], compound: true, goals: I, unit: "reps", cue: "Setup: bell a foot ahead, hinge to grip it. Key: hike it back, snap the hips to float it to chest height. Fault: squatting and lifting with the arms." },
+  { id: "good-morning", name: "Good Morning", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["hamstrings", "back"], compound: true, goals: I, unit: "reps", cue: "Setup: bar on the back, soft knees, braced. Key: hinge the hips back with a flat back, feel the hamstrings. Fault: rounding the spine or going too heavy." },
+
+  // ---------- HORIZONTAL PUSH / chest ----------
+  { id: "bench-press", name: "Bench Press", type: "strength", equipment: "barbell", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: C, unit: "reps", cue: "Setup: shoulder blades pinned and down, slight arch, feet planted. Key: touch the lower chest, drive up and slightly back to lockout. Fault: flaring elbows wide or bouncing off the chest." },
+  { id: "incline-bench-press", name: "Incline Bench Press", type: "strength", equipment: "barbell", pattern: "hpush", muscles: ["chest", "shoulders"], compound: true, goals: C, unit: "reps", cue: "Setup: 30 degree bench, blades set. Key: touch the upper chest, press up and back. Fault: too steep an incline turning it into a press." },
+  { id: "dumbbell-bench-press", name: "Dumbbell Bench Press", type: "strength", equipment: "dumbbell", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: blades set, dumbbells over the lower chest. Key: lower under control to a deep stretch, press up. Fault: clashing the bells at the top or losing the shoulder set." },
+  { id: "incline-dumbbell-press", name: "Incline Dumbbell Press", type: "strength", equipment: "dumbbell", pattern: "hpush", muscles: ["chest", "shoulders"], compound: true, goals: I, unit: "reps", cue: "Setup: 30 degree bench, blades retracted. Key: press up and slightly together, control the lower. Fault: flaring elbows or bouncing." },
+  { id: "machine-chest-press", name: "Machine Chest Press", type: "strength", equipment: "machine", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: handles at mid-chest height, blades set. Key: press to a near-lockout, control back to a stretch. Fault: shrugging the shoulders up to press." },
+  { id: "push-up", name: "Push-Up", type: "strength", equipment: "bodyweight", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: hands under shoulders, body in one line, glutes tight. Key: lower the chest to the floor, elbows ~45 degrees, press away. Fault: sagging hips or flaring elbows." },
+  { id: "cable-fly", name: "Cable Fly", type: "strength", equipment: "cable", pattern: "hpush", muscles: ["chest"], compound: false, goals: I, unit: "reps", cue: "Setup: slight forward lean, soft elbows. Key: hug the arms together, squeeze the chest, control the stretch. Fault: turning it into a press by bending the elbows." },
+  { id: "pec-deck", name: "Pec Deck", type: "strength", equipment: "machine", pattern: "hpush", muscles: ["chest"], compound: false, goals: I, unit: "reps", cue: "Setup: forearms on the pads, chest up. Key: bring the pads together, squeeze, slow return. Fault: using the shoulders or going too heavy." },
+  { id: "chest-dip", name: "Chest Dip", type: "strength", equipment: "bodyweight", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: slight forward lean on the bars. Key: lower to a chest stretch, press to lockout. Fault: shrugging into the shoulders or too shallow." },
+
+  // ---------- VERTICAL PUSH / shoulders ----------
+  { id: "overhead-press", name: "Overhead Press", type: "strength", equipment: "barbell", pattern: "vpush", muscles: ["shoulders", "triceps"], compound: true, goals: C, unit: "reps", cue: "Setup: bar on the front delts, glutes and abs tight, bar over mid-foot. Key: press up, move the head through at lockout. Fault: leaning back into a layback or pressing around the face." },
+  { id: "dumbbell-shoulder-press", name: "Dumbbell Shoulder Press", type: "strength", equipment: "dumbbell", pattern: "vpush", muscles: ["shoulders", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: dumbbells at shoulder height, ribs down. Key: press to lockout, control the lower. Fault: arching the lower back to press." },
+  { id: "machine-shoulder-press", name: "Machine Shoulder Press", type: "strength", equipment: "machine", pattern: "vpush", muscles: ["shoulders", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: handles at shoulder height, back to the pad. Key: press up smoothly, control down. Fault: bouncing out of the bottom." },
+  { id: "arnold-press", name: "Arnold Press", type: "strength", equipment: "dumbbell", pattern: "vpush", muscles: ["shoulders"], compound: true, goals: I, unit: "reps", cue: "Setup: dumbbells at the chest, palms in. Key: rotate and press to lockout, reverse on the way down. Fault: rushing the rotation or arching the back." },
+  { id: "lateral-raise", name: "Lateral Raise", type: "strength", equipment: "dumbbell", pattern: "vpush", muscles: ["shoulders"], compound: false, goals: I, unit: "reps", cue: "Setup: slight forward lean, soft elbows. Key: lead with the elbows to shoulder height, control down. Fault: swinging or shrugging the traps up." },
+  { id: "cable-lateral-raise", name: "Cable Lateral Raise", type: "strength", equipment: "cable", pattern: "vpush", muscles: ["shoulders"], compound: false, goals: I, unit: "reps", cue: "Setup: cable low, handle across the body. Key: raise to shoulder height leading with the elbow, slow return. Fault: using momentum from the torso." },
+  { id: "rear-delt-fly", name: "Rear Delt Fly", type: "strength", equipment: "dumbbell", pattern: "vpush", muscles: ["shoulders", "back"], compound: false, goals: I, unit: "reps", cue: "Setup: hinge forward, soft elbows. Key: open the arms wide, squeeze the rear delts, control. Fault: yanking with the traps or arms straightening." },
+
+  // ---------- HORIZONTAL PULL / back ----------
+  { id: "barbell-row", name: "Barbell Row", type: "strength", equipment: "barbell", pattern: "hpull", muscles: ["back", "biceps"], compound: true, goals: C, unit: "reps", cue: "Setup: hinge to ~45 degrees, flat back, bar under the shoulders. Key: pull to the lower ribs, drive the elbows back, squeeze. Fault: standing up with the weight or yanking with the lower back." },
+  { id: "pendlay-row", name: "Pendlay Row", type: "strength", equipment: "barbell", pattern: "hpull", muscles: ["back"], compound: true, goals: C, unit: "reps", cue: "Setup: torso parallel, bar on the floor each rep. Key: explosive pull to the lower chest, reset on the floor. Fault: using the hips to heave it up." },
+  { id: "dumbbell-row", name: "Dumbbell Row", type: "strength", equipment: "dumbbell", pattern: "hpull", muscles: ["back", "biceps"], compound: true, goals: I, unit: "reps", cue: "Setup: one hand and knee on a bench, flat back. Key: row to the hip, drive the elbow back, full stretch at the bottom. Fault: rotating the torso to swing it up." },
+  { id: "chest-supported-row", name: "Chest-Supported Row", type: "strength", equipment: "dumbbell", pattern: "hpull", muscles: ["back", "biceps"], compound: true, goals: I, unit: "reps", cue: "Setup: chest on an incline bench, arms hanging. Key: pull to the lower ribs, pause, slow return. Fault: lifting the chest off the pad to cheat." },
+  { id: "seated-cable-row", name: "Seated Cable Row", type: "strength", equipment: "cable", pattern: "hpull", muscles: ["back", "biceps"], compound: true, goals: I, unit: "reps", cue: "Setup: tall chest, slight forward reach at the start. Key: drive the elbows back to the ribs, squeeze, control the stretch. Fault: rowing with the lower back or shrugging." },
+  { id: "machine-row", name: "Machine Row", type: "strength", equipment: "machine", pattern: "hpull", muscles: ["back", "biceps"], compound: true, goals: I, unit: "reps", cue: "Setup: chest on the pad, full stretch at the front. Key: pull the elbows back, squeeze the back, control out. Fault: using momentum or partial range." },
+  { id: "face-pull", name: "Face Pull", type: "strength", equipment: "cable", pattern: "hpull", muscles: ["shoulders", "back"], compound: false, goals: I, unit: "reps", cue: "Setup: rope at face height, light weight. Key: pull to the forehead, hands split wide, squeeze the rear delts. Fault: turning it into a row with heavy load." },
+
+  // ---------- VERTICAL PULL / lats ----------
+  { id: "pull-up", name: "Pull-Up", type: "strength", equipment: "bodyweight", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: C, unit: "reps", cue: "Setup: full hang, shoulders active. Key: drive the elbows down, chin over the bar, control the lower. Fault: kipping or half reps. Add load when reps come easy." },
+  { id: "chin-up", name: "Chin-Up", type: "strength", equipment: "bodyweight", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: C, unit: "reps", cue: "Setup: underhand grip, full hang. Key: pull the chest to the bar, squeeze, lower under control. Fault: swinging or not reaching full extension." },
+  { id: "lat-pulldown", name: "Lat Pulldown", type: "strength", equipment: "cable", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: I, unit: "reps", cue: "Setup: thighs pinned, slight lean back. Key: drive the elbows to the ribs, bar to the upper chest, control up. Fault: leaning way back and heaving with the body." },
+  { id: "neutral-grip-pulldown", name: "Neutral-Grip Pulldown", type: "strength", equipment: "cable", pattern: "vpull", muscles: ["back", "biceps"], compound: true, goals: I, unit: "reps", cue: "Setup: neutral handle, tall chest. Key: pull to the upper chest, elbows down and in, squeeze. Fault: rounding forward or using momentum." },
+  { id: "straight-arm-pulldown", name: "Straight-Arm Pulldown", type: "strength", equipment: "cable", pattern: "vpull", muscles: ["back"], compound: false, goals: I, unit: "reps", cue: "Setup: bar high, soft elbows, hinge slightly. Key: drive the bar to the thighs with the lats, squeeze. Fault: bending the elbows into a pushdown." },
+
+  // ---------- BICEPS ----------
+  { id: "barbell-curl", name: "Barbell Curl", type: "strength", equipment: "barbell", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: elbows at the sides, ribs down. Key: curl without swinging, squeeze, control the lower. Fault: using the hips or elbows drifting forward." },
+  { id: "dumbbell-curl", name: "Dumbbell Curl", type: "strength", equipment: "dumbbell", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: arms at the sides, palms forward. Key: curl and supinate, squeeze, slow the lower. Fault: swinging the torso for momentum." },
+  { id: "incline-dumbbell-curl", name: "Incline Dumbbell Curl", type: "strength", equipment: "dumbbell", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: lie back on an incline, arms hanging. Key: curl from a full stretch, squeeze at the top. Fault: letting the elbows drift forward to cheat the stretch." },
+  { id: "hammer-curl", name: "Hammer Curl", type: "strength", equipment: "dumbbell", pattern: "biceps", muscles: ["biceps", "forearms"], compound: false, goals: I, unit: "reps", cue: "Setup: neutral grip, elbows pinned. Key: curl with thumbs up, squeeze, control down. Fault: swinging or rotating the wrist." },
+  { id: "cable-curl", name: "Cable Curl", type: "strength", equipment: "cable", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: low pulley, elbows at the sides. Key: curl with constant tension, squeeze, slow return. Fault: elbows drifting or body swinging." },
+  { id: "preacher-curl", name: "Preacher Curl", type: "strength", equipment: "machine", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: arms flush on the pad. Key: curl to a hard squeeze, control to a near-full stretch. Fault: bouncing out of the stretched position." },
+
+  // ---------- TRICEPS ----------
+  { id: "triceps-pushdown", name: "Triceps Pushdown", type: "strength", equipment: "cable", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: elbows pinned at the sides, tall posture. Key: extend fully, squeeze, control up. Fault: elbows flaring out or leaning over to press." },
+  { id: "rope-pushdown", name: "Rope Pushdown", type: "strength", equipment: "cable", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: rope, elbows tucked. Key: extend and split the rope at the bottom, squeeze. Fault: using the shoulders or partial lockout." },
+  { id: "overhead-triceps-extension", name: "Overhead Triceps Extension", type: "strength", equipment: "cable", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: rope overhead, elbows by the ears. Key: extend fully for a long-head stretch, control back. Fault: elbows flaring wide." },
+  { id: "skull-crusher", name: "Skull Crusher", type: "strength", equipment: "barbell", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: lying, bar over the forehead, elbows in. Key: lower to the hairline, extend without moving the elbows. Fault: flaring the elbows or turning it into a press." },
+  { id: "close-grip-bench", name: "Close-Grip Bench Press", type: "strength", equipment: "barbell", pattern: "triceps", muscles: ["triceps", "chest"], compound: true, goals: I, unit: "reps", cue: "Setup: shoulder-width grip, elbows tucked. Key: touch the lower chest, press up keeping the elbows in. Fault: grip too narrow straining the wrists." },
+  { id: "bench-dip", name: "Bench Dip", type: "strength", equipment: "bodyweight", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: hands on a bench, legs out front. Key: lower until the elbows hit ~90, press to lockout. Fault: shrugging into the shoulders or shallow reps." },
+
+  // ---------- CALVES ----------
+  { id: "standing-calf-raise", name: "Standing Calf Raise", type: "strength", equipment: "machine", pattern: "calf", muscles: ["calves"], compound: false, goals: I, unit: "reps", cue: "Setup: balls of the feet on the platform, legs straight. Key: full stretch at the bottom, big squeeze at the top, pause. Fault: bouncing through partial reps." },
+  { id: "seated-calf-raise", name: "Seated Calf Raise", type: "strength", equipment: "machine", pattern: "calf", muscles: ["calves"], compound: false, goals: I, unit: "reps", cue: "Setup: knees under the pads, balls of the feet on the platform. Key: deep stretch, full squeeze, slow tempo. Fault: rushing or short range." },
+
+  // ---------- CORE ----------
+  { id: "plank", name: "Plank", type: "strength", equipment: "bodyweight", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "sec", cue: "Setup: forearms under shoulders, body in one line. Key: brace the abs and glutes, ribs down, breathe. Fault: hips sagging or piking up." },
+  { id: "hanging-leg-raise", name: "Hanging Leg Raise", type: "strength", equipment: "bodyweight", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: full hang, shoulders active. Key: curl the pelvis up, raise the legs with control, slow lower. Fault: swinging or using momentum." },
+  { id: "cable-crunch", name: "Cable Crunch", type: "strength", equipment: "cable", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: kneel, rope by the head. Key: crunch the ribs to the pelvis, round the spine, squeeze. Fault: hinging at the hips instead of flexing the spine." },
+  { id: "ab-wheel", name: "Ab Wheel Rollout", type: "strength", equipment: "bodyweight", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: kneel, wheel under the shoulders. Key: brace hard, roll out only as far as you can keep a flat back, pull back. Fault: letting the lower back arch and sag." },
+  { id: "pallof-press", name: "Pallof Press", type: "strength", equipment: "cable", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: side-on to a cable at chest height. Key: press straight out and resist the rotation, brace. Fault: letting the torso twist toward the cable." },
+  { id: "dead-bug", name: "Dead Bug", type: "strength", equipment: "bodyweight", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "reps", cue: "Setup: on your back, arms and knees up. Key: lower opposite arm and leg slowly, lower back glued down. Fault: the lower back arching off the floor." },
+  { id: "hollow-hold", name: "Hollow Hold", type: "strength", equipment: "bodyweight", pattern: "core", muscles: ["core"], compound: false, goals: I, unit: "sec", cue: "Setup: on your back, arms overhead. Key: press the lower back into the floor, lift the shoulders and legs, brace. Fault: the lower back lifting and losing tension." },
+
+  // ---------- CARRY ----------
+  { id: "farmer-carry", name: "Farmer Carry", type: "strength", equipment: "dumbbell", pattern: "carry", muscles: ["core", "forearms"], compound: true, goals: I, unit: "sec", cue: "Setup: heavy dumbbells at the sides, tall posture. Key: brace, walk with controlled steps, shoulders back. Fault: leaning or letting the shoulders round forward." },
+
+  // ---------- MOBILITY ----------
+  { id: "90-90-hip", name: "90/90 Hip Switch", type: "mobility", equipment: "bodyweight", pattern: "hip-mobility", muscles: ["hips"], compound: false, goals: MOB, unit: "reps", cue: "Setup: sit with both knees at 90 degrees. Key: rotate slowly knee to knee, stay tall, own the end range. Fault: rushing or rounding the back." },
+  { id: "couch-stretch", name: "Couch Stretch", type: "mobility", equipment: "bodyweight", pattern: "hip-mobility", muscles: ["hips", "quads"], compound: false, goals: MOB, unit: "sec", cue: "Setup: rear foot up a wall, front foot planted. Key: square the hips, ribs down, breathe into the stretch. Fault: arching the lower back to fake range." },
+  { id: "hip-flexor-stretch", name: "Half-Kneeling Hip Flexor Stretch", type: "mobility", equipment: "bodyweight", pattern: "hip-mobility", muscles: ["hips"], compound: false, goals: MOB, unit: "sec", cue: "Setup: half-kneeling, tall torso. Key: tuck the pelvis, shift forward gently, squeeze the back glute. Fault: leaning forward from the lower back." },
+  { id: "ankle-rock", name: "Ankle Dorsiflexion Rock", type: "mobility", equipment: "bodyweight", pattern: "ankle-mobility", muscles: ["ankles"], compound: false, goals: MOB, unit: "reps", cue: "Setup: half-kneeling, front foot flat. Key: drive the knee past the toes, heel glued down. Fault: the heel lifting off the floor." },
+  { id: "tspine-rotation", name: "T-Spine Rotation", type: "mobility", equipment: "bodyweight", pattern: "tspine-mobility", muscles: ["spine"], compound: false, goals: MOB, unit: "reps", cue: "Setup: quadruped, one hand behind the head. Key: rotate the elbow up toward the ceiling, follow with the eyes. Fault: rotating from the lower back, not the mid-back." },
+  { id: "thoracic-opener", name: "Thoracic Extension (foam roller)", type: "mobility", equipment: "bodyweight", pattern: "tspine-mobility", muscles: ["spine"], compound: false, goals: MOB, unit: "sec", cue: "Setup: roller under the upper back, knees bent. Key: support the head, extend over the roller, ribs down, breathe. Fault: arching from the lower back." },
+  { id: "cat-cow", name: "Cat-Cow", type: "mobility", equipment: "bodyweight", pattern: "tspine-mobility", muscles: ["spine"], compound: false, goals: MOB, unit: "reps", cue: "Setup: quadruped, hands under shoulders. Key: move one segment at a time, sync with the breath. Fault: rushing or only moving the lower back." },
+  { id: "worlds-greatest-stretch", name: "World's Greatest Stretch", type: "mobility", equipment: "bodyweight", pattern: "hip-mobility", muscles: ["hips", "spine"], compound: false, goals: MOB, unit: "reps", cue: "Setup: deep lunge, both hands inside the front foot. Key: drop the elbow toward the floor, then rotate the same arm to the sky. Fault: rushing or losing the lunge position." },
+  { id: "deep-squat-hold", name: "Deep Squat Hold", type: "mobility", equipment: "bodyweight", pattern: "hip-mobility", muscles: ["hips", "ankles"], compound: false, goals: MOB, unit: "sec", cue: "Setup: sit into the deepest comfortable squat. Key: pry the knees out with the elbows, tall chest, relax into it. Fault: heels lifting or the back rounding hard." },
+  { id: "band-pull-apart", name: "Band Pull-Apart", type: "mobility", equipment: "band", pattern: "shoulder-mobility", muscles: ["shoulders", "back"], compound: false, goals: MOB, unit: "reps", cue: "Setup: band at chest height, straight arms. Key: pull the band apart, squeeze the blades, no shrug. Fault: bending the elbows or shrugging the traps." },
+  { id: "shoulder-dislocates", name: "Band Shoulder Dislocates", type: "mobility", equipment: "band", pattern: "shoulder-mobility", muscles: ["shoulders"], compound: false, goals: MOB, unit: "reps", cue: "Setup: wide grip on a band overhead. Key: take the band slowly over and behind, straight arms, ribs down. Fault: bending the elbows or arching the back." },
+  { id: "wrist-prep", name: "Wrist Prep Rocks", type: "mobility", equipment: "bodyweight", pattern: "wrist-mobility", muscles: ["wrists"], compound: false, goals: MOB, unit: "reps", cue: "Setup: hands flat on the floor, fingers various directions. Key: rock gently to load the wrists, build range slowly. Fault: forcing into pain." },
+
+  // ---------- CONDITIONING ----------
+  { id: "bike-intervals", name: "Bike Intervals", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", cue: "Setup: seat height level with the hip. Key: hard efforts with easy spins between, steady breathing. Fault: starting too hard and fading." },
+  { id: "row-intervals", name: "Rower Intervals", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "sec", cue: "Setup: strapped in, tall posture. Key: drive legs, then back, then arms; reverse the order on the return. Fault: yanking with the arms first or rounding the back." },
+  { id: "incline-walk", name: "Incline Treadmill Walk", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["legs"], compound: false, goals: CON, unit: "sec", cue: "Setup: steep incline, brisk pace. Key: tall posture, no holding the rails, steady breathing. Fault: leaning on the handrails and killing the effort." },
+  { id: "sled-push", name: "Sled Push", type: "conditioning", equipment: "machine", pattern: "conditioning", muscles: ["legs", "full body"], compound: true, goals: CON, unit: "sec", cue: "Setup: low arms, lean into the sled. Key: drive with short powerful steps, full leg extension. Fault: standing too upright and stalling." },
+  { id: "kb-complex", name: "Kettlebell Complex", type: "conditioning", equipment: "kettlebell", pattern: "conditioning", muscles: ["full body"], compound: true, goals: CON, unit: "reps", cue: "Setup: one bell, clear space. Key: flow swing to clean to press without resting, brace throughout. Fault: losing form as fatigue sets in." },
+];
+
+function parseIntake(text) {
+  var s = String(text == null ? "" : text).toLowerCase();
+  var assumptions = [];
+
+  // days
+  var days = null;
+  var dm = s.match(/(\d+)\s*(?:x\b|times|workouts?|sessions?|days?)/) || s.match(/\bx\s*(\d+)/);
+  if (dm) days = parseInt(dm[1], 10);
+  if (days == null) {
+    var words = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7 };
+    var wm = s.match(/\b(one|two|three|four|five|six|seven)\b/);
+    if (wm && /(workouts?|sessions?|days?|times)/.test(s)) days = words[wm[1]];
+  }
+  if (days == null) { days = 4; assumptions.push("4 days/week"); }
+  days = Math.max(1, Math.min(7, days));
+
+  // goal (order: most specific first)
+  var goal;
+  if (/muscle|hypertroph|build|size|bigger|mass|gains?/.test(s)) goal = "hypertrophy";
+  else if (/strength|stronger|powerlift|1\s*rm|max\b/.test(s)) goal = "strength";
+  else if (/fat\s*loss|lean|conditioning|cardio|shred|\bcut\b|hiit|metcon/.test(s)) goal = "conditioning";
+  else if (/general|fitness|health|maintain/.test(s)) goal = "general";
+  else { goal = "general"; assumptions.push("general training goal"); }
+
+  // includes
+  var includes = [];
+  if (/mobilit|mobilis|flexib|stretch/.test(s)) includes.push("mobility");
+  if (/cardio|conditioning|hiit|metcon/.test(s)) includes.push("conditioning");
+
+  // minutes (range upper bound, then 'under N', then single)
+  var minutes = null;
+  var mr = s.match(/(\d+)\s*(?:-|to|–|—)\s*(\d+)\s*(?:min|minutes|mins|m)\b/);
+  if (mr) minutes = parseInt(mr[2], 10);
+  if (minutes == null) { var un = s.match(/(?:under|max|up to|below|<)\s*(\d+)\s*(?:min|minutes|mins|m)?\b/); if (un) minutes = parseInt(un[1], 10); }
+  if (minutes == null) { var single = s.match(/(\d+)\s*(?:min|minutes|mins|m)\b/); if (single) minutes = parseInt(single[1], 10); }
+  if (minutes == null) { minutes = 60; assumptions.push("60 min/session"); }
+  minutes = Math.max(15, Math.min(120, minutes));
+
+  // focus body parts
+  var focus = [];
+  ["upper", "lower", "push", "pull", "legs", "arms", "chest", "back", "shoulders", "glutes", "core"].forEach(function (f) {
+    if (new RegExp("\\b" + f + "\\b").test(s)) focus.push(f);
+  });
+
+  // standing assumptions (we never parse these)
+  assumptions.unshift("full gym");
+  assumptions.push("intermediate level");
+
+  return { days: days, goal: goal, includes: includes, minutes: minutes, focus: focus, assumptions: assumptions };
+}
+
+/* ===================== Built-in coach ===================== */
+function libraryIntegrity(lib) {
+  lib = Array.isArray(lib) ? lib : [];
+  var errors = [], ids = {};
+  lib.forEach(function (e, i) {
+    var where = (e && e.id) || ("#" + i);
+    if (!e || typeof e !== "object") { errors.push(where + ": not an object"); return; }
+    ["id", "name", "type", "equipment", "pattern", "unit", "cue"].forEach(function (f) {
+      if (!e[f] || typeof e[f] !== "string") errors.push(where + ": missing " + f);
+    });
+    if (!Array.isArray(e.muscles) || !e.muscles.length) errors.push(where + ": muscles[]");
+    if (!Array.isArray(e.goals) || !e.goals.length) errors.push(where + ": goals[]");
+    if (typeof e.compound !== "boolean") errors.push(where + ": compound");
+    if (["strength", "mobility", "conditioning"].indexOf(e.type) < 0) errors.push(where + ": bad type");
+    if (typeof e.cue === "string" && !(/setup:/i.test(e.cue) && /key:/i.test(e.cue) && /fault:/i.test(e.cue))) errors.push(where + ": cue must have Setup/Key/Fault");
+    if (e && e.id) { if (ids[e.id]) errors.push(e.id + ": duplicate id"); ids[e.id] = 1; }
+  });
+  return { ok: errors.length === 0, errors: errors };
+}
+
+var ROLES = {
+  full: [{ patterns: ["squat", "lunge"], compound: true }, { patterns: ["hinge"], compound: true }, { patterns: ["hpush"], compound: true }, { patterns: ["hpull", "vpull"], compound: true }, { patterns: ["vpush"], compound: false }, { patterns: ["core"], compound: false }],
+  upper: [{ patterns: ["hpush"], compound: true }, { patterns: ["vpull", "hpull"], compound: true }, { patterns: ["vpush"], compound: false }, { patterns: ["hpull"], compound: false }, { patterns: ["biceps"], compound: false }, { patterns: ["triceps"], compound: false }],
+  lower: [{ patterns: ["squat"], compound: true }, { patterns: ["hinge"], compound: true }, { patterns: ["lunge"], compound: false }, { patterns: ["hinge"], compound: false }, { patterns: ["calf"], compound: false }, { patterns: ["core"], compound: false }],
+  push: [{ patterns: ["hpush"], compound: true }, { patterns: ["vpush"], compound: true }, { patterns: ["hpush"], compound: false }, { patterns: ["vpush"], compound: false }, { patterns: ["triceps"], compound: false }, { patterns: ["triceps"], compound: false }],
+  pull: [{ patterns: ["vpull"], compound: true }, { patterns: ["hpull"], compound: true }, { patterns: ["hpull"], compound: false }, { patterns: ["vpull"], compound: false }, { patterns: ["biceps"], compound: false }, { patterns: ["biceps"], compound: false }],
+  legs: [{ patterns: ["squat"], compound: true }, { patterns: ["hinge"], compound: true }, { patterns: ["lunge"], compound: false }, { patterns: ["squat"], compound: false }, { patterns: ["hinge"], compound: false }, { patterns: ["calf"], compound: false }],
+};
+var ROLE_NAME = { full: "Full Body", upper: "Upper", lower: "Lower", push: "Push", pull: "Pull", legs: "Legs" };
+var ROLE_FOCUS = { full: "Full body", upper: "Push · pull", lower: "Squat · hinge", push: "Chest · shoulders · triceps", pull: "Back · biceps", legs: "Quads · hams · glutes" };
+var GOAL_TEXT = { hypertrophy: "Build muscle", strength: "Get stronger", conditioning: "Conditioning", general: "General fitness" };
+
+function splitForDays(days, goal) {
+  days = Math.max(1, Math.min(7, days || 4));
+  var hyp = goal === "hypertrophy";
+  switch (days) {
+    case 1: return ["full"];
+    case 2: return ["upper", "lower"];
+    case 3: return hyp ? ["push", "pull", "legs"] : ["full", "full", "full"];
+    case 4: return ["upper", "lower", "upper", "lower"];
+    case 5: return ["push", "pull", "legs", "upper", "lower"];
+    case 6: return ["push", "pull", "legs", "push", "pull", "legs"];
+    default: return ["push", "pull", "legs", "upper", "lower", "full", "full"];
+  }
+}
+
+function pickStrength(slot, selGoal, used, seed) {
+  var pats = slot.patterns;
+  var pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && e.goals.indexOf(selGoal) >= 0 && !used[e.id] && (slot.compound ? e.compound : !e.compound); });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "strength" && pats.indexOf(e.pattern) >= 0 && !used[e.id]; });
+  if (!pool.length) return null;
+  return pool[Math.abs(seed) % pool.length];
+}
+function pickByType(type, used, seed) {
+  var pool = LIBRARY.filter(function (e) { return e.type === type && !used[e.id]; });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === type; });
+  if (!pool.length) return null;
+  return pool[Math.abs(seed) % pool.length];
+}
+function prescription(ex, selGoal, isAnchor, minutes) {
+  if (ex.type === "mobility") return { sets: 2, reps: ex.unit === "sec" ? "30s" : "8-10", target: "", rest: "" };
+  if (ex.type === "conditioning") { var mins = Math.max(6, Math.min(15, Math.round((minutes || 60) / 3))); return { sets: 1, reps: ex.unit === "sec" ? (mins + " min") : "10-15", target: "easy-moderate", rest: "" }; }
+  var anchor = ex.compound && isAnchor;
+  if (selGoal === "strength") return anchor ? { sets: 5, reps: "3-5", target: "RPE 8", rest: "3 min" } : { sets: 3, reps: "6-8", target: "RPE 8", rest: "90 s" };
+  if (selGoal === "hypertrophy") return anchor ? { sets: 4, reps: "6-8", target: "RPE 7-8", rest: "2-3 min" } : { sets: 3, reps: "10-15", target: "RPE 8", rest: "75 s" };
+  return anchor ? { sets: 3, reps: "8-10", target: "RPE 7", rest: "2 min" } : { sets: 3, reps: "10-12", target: "RPE 7", rest: "75 s" };
+}
+function buildEx(ex, selGoal, isAnchor, weightMap, minutes) {
+  var p = prescription(ex, selGoal, isAnchor, minutes);
+  var w = weightMap[ex.name.toLowerCase()];
+  return { name: ex.name, type: ex.type, equipment: ex.equipment, group: "", sets: p.sets, reps: p.reps, weight: (w && w > 0) ? w : 0, target: p.target, rest: p.rest, notes: ex.cue };
+}
+function assignSupersets(exercises) {
+  var accessoryIdx = [], seenAnchor = false;
+  exercises.forEach(function (e, i) { if (e.type === "strength") { if (!seenAnchor) seenAnchor = true; else accessoryIdx.push(i); } });
+  var letter = 65;
+  for (var i = 0; i + 1 < accessoryIdx.length; i += 2) { var g = String.fromCharCode(letter++); exercises[accessoryIdx[i]].group = g; exercises[accessoryIdx[i + 1]].group = g; }
+}
+
+function buildWeightMap(state) {
+  var map = {};
+  function ingest(program, log) {
+    if (!program || !Array.isArray(program.weeks)) return;
+    program.weeks.forEach(function (wk) {
+      wk.sessions.forEach(function (ses) {
+        var sl = log && log[ses.id];
+        ses.exercises.forEach(function (ex) {
+          var el = sl && sl.ex ? sl.ex[ex.id] : null;
+          var w = el && el.weight != null ? el.weight : null;
+          if (w && w > 0) map[String(ex.name).toLowerCase()] = w;
+        });
+      });
+    });
+  }
+  if (state && Array.isArray(state.archive)) state.archive.forEach(function (a) { ingest(a.program, a.log); });
+  if (state) ingest(state.program, state.log);
+  return map;
+}
+
+function generateProgram(intake, weightMap, seed) {
+  intake = intake || {};
+  weightMap = weightMap || {};
+  seed = seed || 0;
+  var goal = intake.goal || "general";
+  var days = clampInt(intake.days, 1, 7, 4);
+  var minutes = clampInt(intake.minutes, 15, 120, 60);
+  var includeMob = (intake.includes || []).indexOf("mobility") >= 0;
+  var includeCon = (intake.includes || []).indexOf("conditioning") >= 0;
+  var selGoal = goal === "hypertrophy" ? "hypertrophy" : goal === "strength" ? "strength" : "general";
+
+  var slotsTotal = Math.max(3, Math.min(8, Math.round(minutes / 8)));
+  var strengthSlots = Math.max(2, slotsTotal - (includeMob ? 1 : 0) - (includeCon ? 1 : 0));
+
+  var roleList = splitForDays(days, goal);
+  var totalOf = {}; roleList.forEach(function (r) { totalOf[r] = (totalOf[r] || 0) + 1; });
+  var seenOf = {};
+
+  var sessions = roleList.map(function (role, si) {
+    var slots = ROLES[role] || ROLES.full;
+    var used = {}, exercises = [];
+    for (var k = 0; k < strengthSlots; k++) {
+      var slot = slots[k % slots.length];
+      var ex = pickStrength(slot, selGoal, used, seed + si * 7 + k * 13);
+      if (ex) { used[ex.id] = 1; exercises.push(buildEx(ex, selGoal, k === 0, weightMap)); }
+    }
+    if (includeMob) { var mob = pickByType("mobility", used, seed + si * 3); if (mob) { used[mob.id] = 1; exercises.push(buildEx(mob, selGoal, false, weightMap)); } }
+    if (includeCon) { var con = pickByType("conditioning", used, seed + si * 5); if (con) { used[con.id] = 1; exercises.push(buildEx(con, selGoal, false, weightMap, minutes)); } }
+    if (minutes <= 45) assignSupersets(exercises);
+    seenOf[role] = (seenOf[role] || 0) + 1;
+    var suffix = totalOf[role] > 1 ? " " + String.fromCharCode(64 + seenOf[role]) : "";
+    return { name: (ROLE_NAME[role] || "Day") + suffix, focus: ROLE_FOCUS[role] || "", exercises: exercises };
+  });
+
+  var title = (GOAL_TEXT[goal] || "Workout") + " · " + days + "-day";
+  return normalizeProgram({ title: title, goal: GOAL_TEXT[goal] || "", unit: intake.unit === "lb" ? "lb" : "kg", weeks: [{ week: 1, focus: GOAL_TEXT[goal] || "", sessions: sessions }] });
+}
+  /*__COACH_END__*/
 
   /* ===================== Default program + state ===================== */
   function defaultProgram() {
@@ -828,7 +1154,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   }
 
   /* ===================== Plan sheet (Claude loop) ===================== */
-  var planSheet = $("planSheet"), pending = null;
+  var planSheet = $("planSheet"), pending = null, pendingBuild = null, buildSeed = 0;
   function buildRequest() {
     var unit = state.program.unit;
     var schema = [
@@ -862,9 +1188,31 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     ].join("\n");
   }
   function openPlan() {
-    pending = null; $("loadPreview").classList.add("hidden"); $("loadText").value = "";
+    pending = null; pendingBuild = null;
+    $("loadPreview").classList.add("hidden"); $("loadText").value = "";
+    $("buildPreview").classList.add("hidden");
     $("reqText").value = buildRequest();
     if (typeof planSheet.showModal === "function") planSheet.showModal(); else planSheet.setAttribute("open", "");
+  }
+  function onBuild() {
+    var intake = parseIntake($("buildText").value);
+    buildSeed++;
+    pendingBuild = generateProgram(intake, buildWeightMap(state), buildSeed);
+    var days = pendingBuild.weeks[0].sessions.length, pv = $("buildPreview");
+    pv.innerHTML = '<div class="preview__title">' + esc(pendingBuild.title) + '</div>' +
+      '<div class="preview__meta">' + days + ' day' + (days > 1 ? "s" : "") + ' · assumed ' + esc(intake.assumptions.join(" · ")) + '</div>' +
+      '<div class="btn-row"><button class="btn btn--primary" id="confirmBuild" type="button">Use this week</button><button class="btn" id="rebuildBtn" type="button">Try again</button></div>';
+    pv.classList.remove("hidden");
+    $("confirmBuild").addEventListener("click", confirmBuild);
+    $("rebuildBtn").addEventListener("click", onBuild);
+  }
+  function confirmBuild() {
+    if (!pendingBuild) return;
+    hideRest();
+    state.archive.push({ title: state.program.title, program: state.program, log: compactLog(state.log), archivedAt: new Date().toISOString() });
+    state.archive = pruneArchive(state.archive, 12);
+    state.program = pendingBuild; state.unit = pendingBuild.unit; state.activeWeek = 0; state.activeSession = 0; state.log = {}; state.activeExerciseId = null;
+    pendingBuild = null; save(); applyTheme(); renderAll(true); closePlan(); toast("Built your week");
   }
   function closePlan() { if (typeof planSheet.close === "function") planSheet.close(); else planSheet.removeAttribute("open"); }
   function copyRequest() {
@@ -899,6 +1247,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   $("planBtn").addEventListener("click", openPlan);
   $("closePlan").addEventListener("click", closePlan);
   planSheet.addEventListener("click", function (ev) { if (ev.target === planSheet) closePlan(); });
+  $("buildBtn").addEventListener("click", onBuild);
   $("copyReqBtn").addEventListener("click", copyRequest);
   $("loadBtn").addEventListener("click", onLoadClick);
 
