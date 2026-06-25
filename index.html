@@ -362,6 +362,13 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
       </div>
     </div>
     <div class="bsect">
+      <div class="blabel">Programme length</div>
+      <div class="seg seg--full" id="bWeeks" role="group" aria-label="Programme length">
+        <button data-weeks="1" type="button">Single week</button>
+        <button data-weeks="4" type="button">4-week block</button>
+      </div>
+    </div>
+    <div class="bsect">
       <div class="blabel">Include</div>
       <div class="chips" id="bInclude" role="group" aria-label="Include">
         <button class="chip" data-inc="mobility" type="button">Mobility</button>
@@ -688,7 +695,7 @@ const LIBRARY = [
   { id: "leg-extension", name: "Leg Extension", type: "strength", equipment: "machine", pattern: "squat", muscles: ["quads"], compound: false, goals: I, unit: "reps", cue: "Setup: knee joint in line with the pivot, sit tall. Key: extend fully, squeeze at the top, control down. Fault: swinging or using momentum." },
 
   // ---------- LUNGE / unilateral ----------
-  { id: "bulgarian-split-squat", name: "Bulgarian Split Squat", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: rear foot on a bench, weight on the front leg. Key: drop straight down, tall torso, drive through the front heel. Fault: pushing off the back foot or short range." },
+  { id: "bulgarian-split-squat", name: "Bulgarian Split Squat", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, lengthened: true, goals: I, unit: "reps", cue: "Setup: rear foot on a bench, weight on the front leg. Key: drop straight down, tall torso, drive through the front heel. Fault: pushing off the back foot or short range." },
   { id: "walking-lunge", name: "Walking Lunge", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: dumbbells at sides, tall posture. Key: long step, back knee toward the floor, push through the front heel. Fault: short choppy steps or front knee collapsing in." },
   { id: "reverse-lunge", name: "Reverse Lunge", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: dumbbells at sides. Key: step back, drop the back knee, drive the front heel to return. Fault: leaning forward or losing balance." },
   { id: "step-up", name: "Dumbbell Step-Up", type: "strength", equipment: "dumbbell", pattern: "lunge", muscles: ["quads", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: box at knee height, dumbbells at sides. Key: drive fully through the top foot, no push off the bottom. Fault: bouncing off the trailing leg." },
@@ -696,13 +703,13 @@ const LIBRARY = [
   // ---------- HINGE / posterior ----------
   { id: "deadlift", name: "Deadlift", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["hamstrings", "glutes", "back"], compound: true, goals: C, unit: "reps", cue: "Setup: bar over mid-foot, shins close, lats tight. Key: take the slack out, push the floor away, hips and chest rise together. Fault: hips shooting up so it becomes a stiff-leg pull." },
   { id: "trap-bar-deadlift", name: "Trap-Bar Deadlift", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["quads", "glutes", "back"], compound: true, goals: C, unit: "reps", cue: "Setup: stand centred, grip the handles, chest up. Key: push the floor away, stand tall, control the lower. Fault: rounding the back or jerking off the floor." },
-  { id: "romanian-deadlift", name: "Romanian Deadlift", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["hamstrings", "glutes"], compound: true, goals: C, unit: "reps", cue: "Setup: soft knees, bar against the thighs. Key: push the hips back, bar drags down the legs, feel the hamstrings load. Fault: turning it into a squat or rounding the lower back." },
-  { id: "dumbbell-rdl", name: "Dumbbell RDL", type: "strength", equipment: "dumbbell", pattern: "hinge", muscles: ["hamstrings", "glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: dumbbells in front of the thighs, soft knees. Key: hinge the hips back, flat back, dumbbells close to the legs. Fault: bending the knees instead of hinging." },
-  { id: "hip-thrust", name: "Hip Thrust", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["glutes"], compound: true, goals: I, unit: "reps", cue: "Setup: upper back on a bench, bar over the hips, chin tucked. Key: drive the hips to full lockout, ribs down, squeeze. Fault: over-arching the lower back instead of squeezing glutes." },
+  { id: "romanian-deadlift", name: "Romanian Deadlift", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["hamstrings", "glutes"], compound: true, lengthened: true, goals: C, unit: "reps", cue: "Setup: soft knees, bar against the thighs. Key: push the hips back, bar drags down the legs, feel the hamstrings load. Fault: turning it into a squat or rounding the lower back." },
+  { id: "dumbbell-rdl", name: "Dumbbell RDL", type: "strength", equipment: "dumbbell", pattern: "hinge", muscles: ["hamstrings", "glutes"], compound: true, lengthened: true, goals: I, unit: "reps", cue: "Setup: dumbbells in front of the thighs, soft knees. Key: hinge the hips back, flat back, dumbbells close to the legs. Fault: bending the knees instead of hinging." },
+  { id: "hip-thrust", name: "Hip Thrust", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["glutes"], compound: true, lengthened: true, goals: I, unit: "reps", cue: "Setup: upper back on a bench, bar over the hips, chin tucked. Key: drive the hips to full lockout, ribs down, squeeze. Fault: over-arching the lower back instead of squeezing glutes." },
   { id: "glute-bridge", name: "Glute Bridge", type: "strength", equipment: "bodyweight", pattern: "hinge", muscles: ["glutes"], compound: false, goals: I, unit: "reps", cue: "Setup: on the floor, heels close to the hips. Key: drive through the heels to full lockout, posterior tilt. Fault: pushing through the toes or hyperextending the spine." },
   { id: "back-extension", name: "Back Extension", type: "strength", equipment: "machine", pattern: "hinge", muscles: ["glutes", "hamstrings", "back"], compound: false, goals: I, unit: "reps", cue: "Setup: pads at the hip crease. Key: hinge from the hips, squeeze glutes to come up, neutral spine. Fault: hyperextending or yanking up with the lower back." },
-  { id: "seated-leg-curl", name: "Seated Leg Curl", type: "strength", equipment: "machine", pattern: "hinge", muscles: ["hamstrings"], compound: false, goals: I, unit: "reps", cue: "Setup: knee joint on the pivot, thighs pinned. Key: curl fully, squeeze, slow the return. Fault: lifting the hips or rushing the eccentric." },
-  { id: "lying-leg-curl", name: "Lying Leg Curl", type: "strength", equipment: "machine", pattern: "hinge", muscles: ["hamstrings"], compound: false, goals: I, unit: "reps", cue: "Setup: hips flat, pad on the lower calf. Key: curl with control, full squeeze, slow lower. Fault: hips lifting off the pad." },
+  { id: "seated-leg-curl", name: "Seated Leg Curl", type: "strength", equipment: "machine", pattern: "hinge", muscles: ["hamstrings"], compound: false, lengthened: true, goals: I, unit: "reps", cue: "Setup: knee joint on the pivot, thighs pinned. Key: curl fully, squeeze, slow the return. Fault: lifting the hips or rushing the eccentric." },
+  { id: "lying-leg-curl", name: "Lying Leg Curl", type: "strength", equipment: "machine", pattern: "hinge", muscles: ["hamstrings"], compound: false, lengthened: true, goals: I, unit: "reps", cue: "Setup: hips flat, pad on the lower calf. Key: curl with control, full squeeze, slow lower. Fault: hips lifting off the pad." },
   { id: "kettlebell-swing", name: "Kettlebell Swing", type: "strength", equipment: "kettlebell", pattern: "hinge", muscles: ["glutes", "hamstrings"], compound: true, goals: I, unit: "reps", cue: "Setup: bell a foot ahead, hinge to grip it. Key: hike it back, snap the hips to float it to chest height. Fault: squatting and lifting with the arms." },
   { id: "good-morning", name: "Good Morning", type: "strength", equipment: "barbell", pattern: "hinge", muscles: ["hamstrings", "back"], compound: true, goals: I, unit: "reps", cue: "Setup: bar on the back, soft knees, braced. Key: hinge the hips back with a flat back, feel the hamstrings. Fault: rounding the spine or going too heavy." },
 
@@ -710,7 +717,7 @@ const LIBRARY = [
   { id: "bench-press", name: "Bench Press", type: "strength", equipment: "barbell", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: C, unit: "reps", cue: "Setup: shoulder blades pinned and down, slight arch, feet planted. Key: touch the lower chest, drive up and slightly back to lockout. Fault: flaring elbows wide or bouncing off the chest." },
   { id: "incline-bench-press", name: "Incline Bench Press", type: "strength", equipment: "barbell", pattern: "hpush", muscles: ["chest", "shoulders"], compound: true, goals: C, unit: "reps", cue: "Setup: 30 degree bench, blades set. Key: touch the upper chest, press up and back. Fault: too steep an incline turning it into a press." },
   { id: "dumbbell-bench-press", name: "Dumbbell Bench Press", type: "strength", equipment: "dumbbell", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: blades set, dumbbells over the lower chest. Key: lower under control to a deep stretch, press up. Fault: clashing the bells at the top or losing the shoulder set." },
-  { id: "incline-dumbbell-press", name: "Incline Dumbbell Press", type: "strength", equipment: "dumbbell", pattern: "hpush", muscles: ["chest", "shoulders"], compound: true, goals: I, unit: "reps", cue: "Setup: 30 degree bench, blades retracted. Key: press up and slightly together, control the lower. Fault: flaring elbows or bouncing." },
+  { id: "incline-dumbbell-press", name: "Incline Dumbbell Press", type: "strength", equipment: "dumbbell", pattern: "hpush", muscles: ["chest", "shoulders"], compound: true, lengthened: true, goals: I, unit: "reps", cue: "Setup: 30 degree bench, blades retracted. Key: press up and slightly together, control the lower. Fault: flaring elbows or bouncing." },
   { id: "machine-chest-press", name: "Machine Chest Press", type: "strength", equipment: "machine", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: handles at mid-chest height, blades set. Key: press to a near-lockout, control back to a stretch. Fault: shrugging the shoulders up to press." },
   { id: "push-up", name: "Push-Up", type: "strength", equipment: "bodyweight", pattern: "hpush", muscles: ["chest", "triceps"], compound: true, goals: I, unit: "reps", cue: "Setup: hands under shoulders, body in one line, glutes tight. Key: lower the chest to the floor, elbows ~45 degrees, press away. Fault: sagging hips or flaring elbows." },
   { id: "cable-fly", name: "Cable Fly", type: "strength", equipment: "cable", pattern: "hpush", muscles: ["chest"], compound: false, goals: I, unit: "reps", cue: "Setup: slight forward lean, soft elbows. Key: hug the arms together, squeeze the chest, control the stretch. Fault: turning it into a press by bending the elbows." },
@@ -745,7 +752,7 @@ const LIBRARY = [
   // ---------- BICEPS ----------
   { id: "barbell-curl", name: "Barbell Curl", type: "strength", equipment: "barbell", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: elbows at the sides, ribs down. Key: curl without swinging, squeeze, control the lower. Fault: using the hips or elbows drifting forward." },
   { id: "dumbbell-curl", name: "Dumbbell Curl", type: "strength", equipment: "dumbbell", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: arms at the sides, palms forward. Key: curl and supinate, squeeze, slow the lower. Fault: swinging the torso for momentum." },
-  { id: "incline-dumbbell-curl", name: "Incline Dumbbell Curl", type: "strength", equipment: "dumbbell", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: lie back on an incline, arms hanging. Key: curl from a full stretch, squeeze at the top. Fault: letting the elbows drift forward to cheat the stretch." },
+  { id: "incline-dumbbell-curl", name: "Incline Dumbbell Curl", type: "strength", equipment: "dumbbell", pattern: "biceps", muscles: ["biceps"], compound: false, lengthened: true, goals: I, unit: "reps", cue: "Setup: lie back on an incline, arms hanging. Key: curl from a full stretch, squeeze at the top. Fault: letting the elbows drift forward to cheat the stretch." },
   { id: "hammer-curl", name: "Hammer Curl", type: "strength", equipment: "dumbbell", pattern: "biceps", muscles: ["biceps", "forearms"], compound: false, goals: I, unit: "reps", cue: "Setup: neutral grip, elbows pinned. Key: curl with thumbs up, squeeze, control down. Fault: swinging or rotating the wrist." },
   { id: "cable-curl", name: "Cable Curl", type: "strength", equipment: "cable", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: low pulley, elbows at the sides. Key: curl with constant tension, squeeze, slow return. Fault: elbows drifting or body swinging." },
   { id: "preacher-curl", name: "Preacher Curl", type: "strength", equipment: "machine", pattern: "biceps", muscles: ["biceps"], compound: false, goals: I, unit: "reps", cue: "Setup: arms flush on the pad. Key: curl to a hard squeeze, control to a near-full stretch. Fault: bouncing out of the stretched position." },
@@ -753,7 +760,7 @@ const LIBRARY = [
   // ---------- TRICEPS ----------
   { id: "triceps-pushdown", name: "Triceps Pushdown", type: "strength", equipment: "cable", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: elbows pinned at the sides, tall posture. Key: extend fully, squeeze, control up. Fault: elbows flaring out or leaning over to press." },
   { id: "rope-pushdown", name: "Rope Pushdown", type: "strength", equipment: "cable", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: rope, elbows tucked. Key: extend and split the rope at the bottom, squeeze. Fault: using the shoulders or partial lockout." },
-  { id: "overhead-triceps-extension", name: "Overhead Triceps Extension", type: "strength", equipment: "cable", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: rope overhead, elbows by the ears. Key: extend fully for a long-head stretch, control back. Fault: elbows flaring wide." },
+  { id: "overhead-triceps-extension", name: "Overhead Triceps Extension", type: "strength", equipment: "cable", pattern: "triceps", muscles: ["triceps"], compound: false, lengthened: true, goals: I, unit: "reps", cue: "Setup: rope overhead, elbows by the ears. Key: extend fully for a long-head stretch, control back. Fault: elbows flaring wide." },
   { id: "skull-crusher", name: "Skull Crusher", type: "strength", equipment: "barbell", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: lying, bar over the forehead, elbows in. Key: lower to the hairline, extend without moving the elbows. Fault: flaring the elbows or turning it into a press." },
   { id: "close-grip-bench", name: "Close-Grip Bench Press", type: "strength", equipment: "barbell", pattern: "triceps", muscles: ["triceps", "chest"], compound: true, goals: I, unit: "reps", cue: "Setup: shoulder-width grip, elbows tucked. Key: touch the lower chest, press up keeping the elbows in. Fault: grip too narrow straining the wrists." },
   { id: "bench-dip", name: "Bench Dip", type: "strength", equipment: "bodyweight", pattern: "triceps", muscles: ["triceps"], compound: false, goals: I, unit: "reps", cue: "Setup: hands on a bench, legs out front. Key: lower until the elbows hit ~90, press to lockout. Fault: shrugging into the shoulders or shallow reps." },
@@ -925,10 +932,15 @@ function pickStrength(slot, selGoal, allowed, ctx, seed, patCap, dlCap) {
   }
   var pats = slot.patterns;
   var pool = LIBRARY.filter(function (e) { return ok(e, pats, slot.compound, true); });
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, pats, null, true); });        // relax compound
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, pats, null, false); });       // relax goal
-  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, ALL_PATTERNS, null, false); }); // any under-cap pattern -> keeps the week balanced
-  if (!pool.length) return null; // every pattern at cap -> drop the slot rather than overload one pattern
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, pats, null, true); });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, pats, null, false); });
+  if (!pool.length) pool = LIBRARY.filter(function (e) { return ok(e, ALL_PATTERNS, null, false); });
+  if (!pool.length) return null;
+  if (selGoal === "hypertrophy" || selGoal === "general") {
+    pool = pool.slice().sort(function (a, b) {
+      return (b.lengthened ? 1 : 0) - (a.lengthened ? 1 : 0);
+    });
+  }
   return pool[Math.abs(seed) % pool.length];
 }
 function pickByType(type, allowed, used, seed) {
@@ -936,19 +948,55 @@ function pickByType(type, allowed, used, seed) {
   if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === type && equipOk(e, allowed); });
   return pool.length ? pool[Math.abs(seed) % pool.length] : null;
 }
-function prescription(ex, goal, isAnchor, minutes) {
-  if (ex.type === "mobility") return { sets: 2, reps: ex.unit === "sec" ? "30s" : "8-10", target: "", rest: "" };
-  if (ex.type === "conditioning") {
-    if (ex.intensity === "z2") { var z = Math.max(20, Math.min(45, Math.round((minutes || 60) * 0.5))); return { sets: 1, reps: z + " min", target: "Zone 2 · conversational pace", rest: "" }; }
-    if (ex.intensity === "threshold") return { sets: 3, reps: "8 min", target: "tempo · comfortably hard", rest: "3 min easy" };
-    return { sets: 4, reps: "4 min", target: "intervals · near-max effort", rest: "3 min easy" }; // VO2: validated 4x4
+function prescription(ex, goal, isAnchor, minutes, weekNum, isDeload) {
+  weekNum = weekNum || 1;
+  isDeload = !!isDeload;
+
+  if (ex.type === "mobility") {
+    return { sets: 2, reps: ex.unit === "sec" ? "30s" : "8-10", target: "", rest: "" };
   }
+  if (ex.type === "conditioning") {
+    if (ex.intensity === "z2") {
+      var z = Math.max(20, Math.min(45, Math.round((minutes || 60) * 0.5)));
+      return { sets: 1, reps: z + " min", target: "Zone 2 · conversational pace", rest: "" };
+    }
+    if (ex.intensity === "threshold") {
+      return { sets: 3, reps: "8 min", target: "Tempo · comfortably hard", rest: "3 min easy" };
+    }
+    return { sets: 4, reps: "4 min", target: "~90-95% HRmax · near-max effort", rest: "3 min easy" };
+  }
+
+  var rirMap = { 1: "3 RIR · RPE 7", 2: "2 RIR · RPE 8", 3: "1 RIR · RPE 9", 4: "4 RIR · RPE 6" };
+  var target = rirMap[isDeload ? 4 : Math.min(weekNum, 3)] || "2 RIR · RPE 8";
   var anchor = ex.compound && isAnchor;
-  if (goal === "strength") return anchor ? { sets: 5, reps: "3-5", target: "RPE 8", rest: "3 min" } : { sets: 3, reps: "8-10", target: "RPE 8", rest: "90 s" };
-  if (goal === "hypertrophy") return anchor ? { sets: 4, reps: "6-8", target: "RPE 7-8", rest: "2-3 min" } : { sets: 3, reps: "10-15", target: "RPE 8", rest: "75 s" };
-  if (goal === "hybrid") return anchor ? { sets: 4, reps: "5-6", target: "RPE 7-8", rest: "2 min" } : { sets: 3, reps: "8-12", target: "RPE 8", rest: "75 s" };
-  if (goal === "endurance") return { sets: 3, reps: "15-20", target: "RPE 8", rest: "45 s" };
-  return anchor ? { sets: 3, reps: "8-10", target: "RPE 7", rest: "2 min" } : { sets: 3, reps: "10-12", target: "RPE 7", rest: "75 s" };
+
+  var anchorSets, accSets;
+  if (isDeload)        { anchorSets = 3; accSets = 2; }
+  else if (weekNum === 1) { anchorSets = 4; accSets = 3; }
+  else if (weekNum === 2) { anchorSets = 5; accSets = 3; }
+  else                 { anchorSets = 5; accSets = 4; }
+
+  if (goal === "strength") {
+    return anchor
+      ? { sets: anchorSets, reps: "3-5",   target: target, rest: "3 min" }
+      : { sets: accSets,    reps: "8-10",  target: target, rest: "90 s" };
+  }
+  if (goal === "hypertrophy") {
+    return anchor
+      ? { sets: anchorSets, reps: "6-8",   target: target, rest: "2-3 min" }
+      : { sets: accSets,    reps: "10-15", target: target, rest: "75 s" };
+  }
+  if (goal === "hybrid") {
+    return anchor
+      ? { sets: anchorSets, reps: "5-6",   target: target, rest: "2 min" }
+      : { sets: accSets,    reps: "8-12",  target: target, rest: "75 s" };
+  }
+  if (goal === "endurance") {
+    return { sets: accSets, reps: "15-20", target: target, rest: "45 s" };
+  }
+  return anchor
+    ? { sets: anchorSets, reps: "8-10",  target: target, rest: "2 min" }
+    : { sets: accSets,    reps: "10-12", target: target, rest: "75 s" };
 }
 function pickConditioning(intensity, allowed, used, seed) {
   var pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && e.intensity === intensity && equipOk(e, allowed) && !used[e.id]; });
@@ -956,16 +1004,63 @@ function pickConditioning(intensity, allowed, used, seed) {
   if (!pool.length) pool = LIBRARY.filter(function (e) { return e.type === "conditioning" && equipOk(e, allowed); });
   return pool.length ? pool[Math.abs(seed) % pool.length] : null;
 }
-function buildEx(ex, goal, isAnchor, weightMap, minutes) {
-  var p = prescription(ex, goal, isAnchor, minutes);
+function buildEx(ex, goal, isAnchor, weightMap, minutes, weekNum, isDeload) {
+  var p = prescription(ex, goal, isAnchor, minutes, weekNum, isDeload);
   var w = weightMap[ex.name.toLowerCase()];
-  return { name: ex.name, type: ex.type, equipment: ex.equipment, group: "", sets: p.sets, reps: p.reps, weight: (w && w > 0) ? w : 0, target: p.target, rest: p.rest, notes: ex.cue };
+  return {
+    name: ex.name, type: ex.type, equipment: ex.equipment, group: "",
+    sets: p.sets, reps: p.reps,
+    weight: (w && w > 0) ? w : 0,
+    target: p.target, rest: p.rest, notes: ex.cue
+  };
+}
+var ANTAGONIST_MAP = {
+  "hpush":   ["hpull", "vpull"],
+  "hpull":   ["hpush"],
+  "vpull":   ["hpush", "vpush"],
+  "vpush":   ["biceps", "vpull"],
+  "biceps":  ["triceps", "vpush"],
+  "triceps": ["biceps", "hpush"],
+  "squat":   ["hinge", "core"],
+  "hinge":   ["squat", "core"],
+  "lunge":   ["core"],
+  "core":    ["squat", "hinge", "lunge", "carry"],
+  "carry":   ["core", "vpush"],
+  "calf":    ["core"]
+};
+function getExPattern(name) {
+  for (var i = 0; i < LIBRARY.length; i++) {
+    if (LIBRARY[i].name === name) return LIBRARY[i].pattern || "";
+  }
+  return "";
 }
 function assignSupersets(exercises) {
-  var accessoryIdx = [], seenAnchor = false;
-  exercises.forEach(function (e, i) { if (e.type === "strength") { if (!seenAnchor) seenAnchor = true; else accessoryIdx.push(i); } });
+  var strengthExes = exercises.filter(function (e) { return e.type === "strength"; });
+  if (strengthExes.length < 2) return;
+  var paired = {};
   var letter = 65;
-  for (var i = 0; i + 1 < accessoryIdx.length; i += 2) { var g = String.fromCharCode(letter++); exercises[accessoryIdx[i]].group = g; exercises[accessoryIdx[i + 1]].group = g; }
+  for (var i = 1; i < strengthExes.length; i++) {
+    if (paired[i]) continue;
+    var patA = getExPattern(strengthExes[i].name);
+    var antagonists = ANTAGONIST_MAP[patA] || [];
+    var partner = -1;
+    for (var j = i + 1; j < strengthExes.length; j++) {
+      if (paired[j]) continue;
+      if (antagonists.indexOf(getExPattern(strengthExes[j].name)) >= 0) { partner = j; break; }
+    }
+    if (partner < 0) {
+      for (var k = i + 1; k < strengthExes.length; k++) {
+        if (!paired[k]) { partner = k; break; }
+      }
+    }
+    if (partner >= 0) {
+      var g = String.fromCharCode(letter++);
+      strengthExes[i].group = g;
+      strengthExes[partner].group = g;
+      paired[i] = true;
+      paired[partner] = true;
+    }
+  }
 }
 
 function buildWeightMap(state) {
@@ -992,59 +1087,102 @@ function generateProgram(intake, weightMap, seed) {
   intake = intake || {};
   weightMap = weightMap || {};
   seed = seed || 0;
-  var goal = intake.goal || "general";
-  var days = clampInt(intake.days, 1, 7, 4);
-  var minutes = clampInt(intake.minutes, 15, 120, 60);
+
+  var goal     = intake.goal || "general";
+  var days     = clampInt(intake.days, 1, 7, 4);
+  var minutes  = clampInt(intake.minutes, 15, 120, 60);
+  var totalWeeks = clampInt(intake.weeks, 1, 8, 4);
   var isHybrid = goal === "hybrid", isEnd = goal === "endurance";
-  var allowed = Array.isArray(intake.equipment) ? intake.equipment : null;
+  var allowed  = Array.isArray(intake.equipment) ? intake.equipment : null;
   var includeMob = isHybrid || isEnd || (intake.includes || []).indexOf("mobility") >= 0;
   var includeCon = isHybrid || isEnd || (intake.includes || []).indexOf("conditioning") >= 0;
-  var selGoal = goal === "hypertrophy" ? "hypertrophy" : goal === "strength" ? "strength" : "general";
+  var selGoal  = goal === "hypertrophy" ? "hypertrophy" : goal === "strength" ? "strength" : "general";
 
   var slotsTotal = Math.max(3, Math.min(8, Math.round(minutes / 8)));
   var strengthSlots;
-  if (isHybrid) strengthSlots = Math.max(2, Math.min(4, slotsTotal - 2));
-  else if (isEnd) strengthSlots = Math.max(1, Math.min(3, slotsTotal - 2));
-  else strengthSlots = Math.max(2, Math.min(6, slotsTotal - (includeMob ? 1 : 0) - (includeCon ? 1 : 0)));
+  if (isHybrid)     strengthSlots = Math.max(2, Math.min(4, slotsTotal - 2));
+  else if (isEnd)   strengthSlots = Math.max(1, Math.min(3, slotsTotal - 2));
+  else              strengthSlots = Math.max(2, Math.min(6, slotsTotal - (includeMob ? 1 : 0) - (includeCon ? 1 : 0)));
 
   var roleList = splitForDays(days, goal);
-  var totalOf = {}; roleList.forEach(function (r) { totalOf[r] = (totalOf[r] || 0) + 1; });
-  var occOf = {};
-  // Week-level state: used = exercise ids (no exact repeat); pat = per-pattern count
-  // (cap each movement pattern); dl = deadlift-family count (capped to 1).
-  var ctx = { used: {}, pat: {}, dl: 0 };
-  var patCap = days >= 5 ? 3 : 2;
+  var totalOf  = {};
+  roleList.forEach(function (r) { totalOf[r] = (totalOf[r] || 0) + 1; });
 
-  var sessions = roleList.map(function (role, si) {
-    var occ = (occOf[role] = (occOf[role] || 0)); occOf[role]++;
-    var baseSlots = ROLES[role] || ROLES.full;
-    // Rotate the slot order each time a role repeats, so each day LEADS with a
-    // different pattern (squat-day vs hinge-day vs push-day) instead of the same
-    // heavy lift every session.
-    var rot = baseSlots.length ? occ % baseSlots.length : 0;
-    var slots = baseSlots.slice(rot).concat(baseSlots.slice(0, rot));
-    var strengthEx = [], extraEx = [];
-    for (var k = 0; k < strengthSlots; k++) {
-      var slot = slots[k % slots.length];
-      var ex = pickStrength(slot, selGoal, allowed, ctx, seed + si * 7 + k * 13, patCap, 1);
-      if (ex) { ctx.used[ex.id] = 1; ctx.pat[ex.pattern] = (ctx.pat[ex.pattern] || 0) + 1; if (DEADLIFT_FAMILY.indexOf(ex.id) >= 0) ctx.dl++; strengthEx.push(buildEx(ex, goal, k === 0, weightMap)); }
-    }
-    // Research: strength FIRST, then conditioning, then mobility (cooldown).
-    if (includeCon) {
-      var intensity = isHybrid ? (si % 2 === 0 ? "z2" : "interval")
-        : isEnd ? (si === 1 ? "interval" : (si === 3 ? "threshold" : "z2"))  // polarized 80/20: mostly Zone 2, one VO2 day, one tempo day
-        : "interval";
-      var con = pickConditioning(intensity, allowed, ctx.used, seed + si * 5);
-      if (con) { ctx.used[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes)); }
-    }
-    if (includeMob) { var mob = pickByType("mobility", allowed, ctx.used, seed + si * 3); if (mob) { ctx.used[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap)); } }
-    if (minutes <= 45) assignSupersets(strengthEx);
-    var suffix = totalOf[role] > 1 ? " " + String.fromCharCode(65 + occ) : "";
-    return { name: (ROLE_NAME[role] || "Day") + suffix, focus: ROLE_FOCUS[role] || "", exercises: strengthEx.concat(extraEx) };
+  function phaseLabel(wn, deload) {
+    if (deload)    return "Deload — consolidate, 50% volume, RPE 6";
+    if (wn === 1)  return "Accumulation — build work capacity, 3 RIR";
+    if (wn === 2)  return "Accumulation — volume increasing, 2 RIR";
+    return                "Overreach — peak volume, 1 RIR, push the ceiling";
+  }
+
+  var weeks = [];
+
+  for (var wn = 1; wn <= totalWeeks; wn++) {
+    var isDeload = (totalWeeks >= 4 && wn === totalWeeks);
+    var ctx = { used: {}, pat: {}, dl: 0 };
+    var patCap = days >= 5 ? 3 : 2;
+    var occOf  = {};
+
+    var sessions = roleList.map(function (role, si) {
+      var occ = (occOf[role] = (occOf[role] || 0));
+      occOf[role]++;
+      var baseSlots = ROLES[role] || ROLES.full;
+      var rot  = baseSlots.length ? occ % baseSlots.length : 0;
+      var slots = baseSlots.slice(rot).concat(baseSlots.slice(0, rot));
+      var strengthEx = [], extraEx = [];
+
+      for (var k = 0; k < strengthSlots; k++) {
+        var slot = slots[k % slots.length];
+        var ex = pickStrength(slot, selGoal, allowed, ctx, seed + si * 7 + k * 13 + wn * 31, patCap, 1);
+        if (ex) {
+          ctx.used[ex.id] = 1;
+          ctx.pat[ex.pattern] = (ctx.pat[ex.pattern] || 0) + 1;
+          if (DEADLIFT_FAMILY.indexOf(ex.id) >= 0) ctx.dl++;
+          strengthEx.push(buildEx(ex, goal, k === 0, weightMap, minutes, wn, isDeload));
+        }
+      }
+
+      if (includeCon) {
+        var intensity;
+        if (isEnd) {
+          var conIdx = si % days;
+          if (conIdx === 1)           intensity = "interval";
+          else if (conIdx === days - 1) intensity = "threshold";
+          else                          intensity = "z2";
+        } else if (isHybrid) {
+          intensity = si % 2 === 0 ? "z2" : "interval";
+        } else {
+          intensity = "interval";
+        }
+        var con = pickConditioning(intensity, allowed, ctx.used, seed + si * 5 + wn * 11);
+        if (con) { ctx.used[con.id] = 1; extraEx.push(buildEx(con, goal, false, weightMap, minutes, wn, isDeload)); }
+      }
+
+      if (includeMob) {
+        var mob = pickByType("mobility", allowed, ctx.used, seed + si * 3 + wn * 7);
+        if (mob) { ctx.used[mob.id] = 1; extraEx.push(buildEx(mob, goal, false, weightMap, minutes, wn, isDeload)); }
+      }
+
+      if (minutes <= 45) assignSupersets(strengthEx);
+
+      var suffix = totalOf[role] > 1 ? " " + String.fromCharCode(65 + occ) : "";
+      return {
+        name: (ROLE_NAME[role] || "Day") + suffix,
+        focus: ROLE_FOCUS[role] || "",
+        exercises: strengthEx.concat(extraEx)
+      };
+    });
+
+    weeks.push({ week: wn, focus: phaseLabel(wn, isDeload), deload: isDeload, sessions: sessions });
+  }
+
+  var weekLabel = totalWeeks > 1 ? totalWeeks + "-week " : "";
+  return normalizeProgram({
+    title: (GOAL_TEXT[goal] || "Workout") + " · " + weekLabel + days + "-day",
+    goal:  GOAL_TEXT[goal] || "",
+    unit:  intake.unit === "lb" ? "lb" : "kg",
+    weeks: weeks
   });
-
-  var title = (GOAL_TEXT[goal] || "Workout") + " · " + days + "-day";
-  return normalizeProgram({ title: title, goal: GOAL_TEXT[goal] || "", unit: intake.unit === "lb" ? "lb" : "kg", weeks: [{ week: 1, focus: GOAL_TEXT[goal] || "", sessions: sessions }] });
 }
   /*__COACH_END__*/
 
@@ -1363,6 +1501,7 @@ function generateProgram(intake, weightMap, seed) {
       minutes: [30, 45, 60].indexOf(p.minutes) >= 0 ? p.minutes : 45,
       mobility: p.mobility === undefined ? true : !!p.mobility,
       conditioning: p.conditioning === undefined ? cardioGoal : !!p.conditioning,
+      weeks: [1, 4].indexOf(parseInt(p.weeks, 10)) >= 0 ? parseInt(p.weeks, 10) : 4,
       equipment: equip
     };
     return state.buildPrefs;
@@ -1374,6 +1513,9 @@ function generateProgram(intake, weightMap, seed) {
     document.querySelectorAll("#bTime button").forEach(function (b) { b.setAttribute("aria-pressed", parseInt(b.getAttribute("data-min"), 10) === p.minutes); });
     document.querySelectorAll("#bInclude button").forEach(function (b) { b.setAttribute("aria-pressed", !!p[b.getAttribute("data-inc")]); });
     document.querySelectorAll("#bEquip button").forEach(function (b) { b.setAttribute("aria-pressed", p.equipment.indexOf(b.getAttribute("data-eq")) >= 0); });
+    document.querySelectorAll("#bWeeks button").forEach(function (b) {
+      b.setAttribute("aria-pressed", parseInt(b.getAttribute("data-weeks"), 10) === p.weeks);
+    });
   }
   function openPlan() {
     pending = null; pendingBuild = null;
@@ -1387,7 +1529,7 @@ function generateProgram(intake, weightMap, seed) {
     var p = buildPrefs(), includes = [];
     if (p.mobility) includes.push("mobility");
     if (p.conditioning) includes.push("conditioning");
-    var intake = { days: p.days, goal: p.goal, minutes: p.minutes, includes: includes, focus: [], equipment: p.equipment };
+    var intake = { days: p.days, goal: p.goal, minutes: p.minutes, weeks: p.weeks, includes: includes, focus: [], equipment: p.equipment };
     buildSeed++;
     pendingBuild = generateProgram(intake, buildWeightMap(state), buildSeed);
     var days = pendingBuild.weeks[0].sessions.length, pv = $("buildPreview");
@@ -1443,6 +1585,13 @@ function generateProgram(intake, weightMap, seed) {
   $("bGoal").addEventListener("click", function (ev) { var b = ev.target.closest("[data-goal]"); if (!b) return; var p = buildPrefs(); p.goal = b.getAttribute("data-goal"); if (p.goal === "hybrid" || p.goal === "endurance") { p.conditioning = true; p.mobility = true; } save(); syncBuild(); });
   $("bDays").addEventListener("click", function (ev) { var b = ev.target.closest("[data-days]"); if (!b) return; buildPrefs().days = parseInt(b.getAttribute("data-days"), 10); save(); syncBuild(); });
   $("bTime").addEventListener("click", function (ev) { var b = ev.target.closest("[data-min]"); if (!b) return; buildPrefs().minutes = parseInt(b.getAttribute("data-min"), 10); save(); syncBuild(); });
+  $("bWeeks").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-weeks]");
+    if (!b) return;
+    buildPrefs().weeks = parseInt(b.getAttribute("data-weeks"), 10);
+    save();
+    syncBuild();
+  });
   $("bInclude").addEventListener("click", function (ev) { var b = ev.target.closest("[data-inc]"); if (!b) return; var k = b.getAttribute("data-inc"); var p = buildPrefs(); p[k] = !p[k]; save(); syncBuild(); });
   $("bEquip").addEventListener("click", function (ev) { var b = ev.target.closest("[data-eq]"); if (!b) return; var k = b.getAttribute("data-eq"); var p = buildPrefs(); var i = p.equipment.indexOf(k); if (i >= 0) p.equipment.splice(i, 1); else p.equipment.push(k); save(); syncBuild(); });
   $("copyReqBtn").addEventListener("click", copyRequest);
