@@ -1114,9 +1114,9 @@ function generateProgram(intake, weightMap, seed) {
   var totalWeeks = clampInt(intake.weeks, 1, 8, 4);
   var isHybrid = goal === "hybrid", isEnd = goal === "endurance";
   var allowed  = Array.isArray(intake.equipment) ? intake.equipment : null;
-  var includeMob = isHybrid || isEnd || (intake.includes || []).indexOf("mobility") >= 0;
-  // Cardio is forced only for Endurance (it IS the goal). Hybrid/Strength/etc.
-  // respect the Cardio toggle: un-tick it and no conditioning is programmed.
+  // Both add-ons honour their toggle. Mobility is never "core" to a goal, so it is
+  // always optional. Cardio is forced only for Endurance (it IS the goal).
+  var includeMob = (intake.includes || []).indexOf("mobility") >= 0;
   var includeCon = isEnd || (intake.includes || []).indexOf("conditioning") >= 0;
   var selGoal  = goal === "hypertrophy" ? "hypertrophy" : goal === "strength" ? "strength" : "general";
 
@@ -1751,7 +1751,28 @@ function generateProgram(intake, weightMap, seed) {
     $("introGo").addEventListener("click", function () { el.hidden = true; try { localStorage.setItem(KEY, "1"); } catch (e) {} });
   }
   initRest(); save(); applyTheme(); renderAll(true); initPersistence(); initIntro();
-  if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js").catch(function () {}); }); }
+  if ("serviceWorker" in navigator) {
+    // Auto-update. The SW skipWaits + claims, so a newly deployed version becomes
+    // the controller on its own. If this page was already controlled when it loaded,
+    // a controllerchange means that fresh version just took over — reload once to
+    // swap it in (no more "open it twice"). The controller guard skips the very
+    // first install so a first-ever visit never reloads itself.
+    if (navigator.serviceWorker.controller) {
+      var swRefreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (swRefreshing) return;
+        swRefreshing = true;
+        toast("Updating to the latest version…");
+        setTimeout(function () { window.location.reload(); }, 600);
+      });
+    }
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("./sw.js").then(function (reg) {
+        reg.update().catch(function () {});            // check for a new version on each launch
+        setInterval(function () { reg.update().catch(function () {}); }, 60 * 60 * 1000); // and hourly if left open
+      }).catch(function () {});
+    });
+  }
 })();
 </script>
 </body>
