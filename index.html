@@ -145,7 +145,7 @@ input, textarea { font: inherit; color: inherit; }
 .tag--conditioning { color: var(--ink-dim); }
 .card__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .weight { display: flex; align-items: center; gap: 8px; }
-.step { width: 40px; height: 40px; flex: none; display: grid; place-items: center; font-family: "Spline Sans Mono", monospace; font-size: 22px; line-height: 1; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 11px; color: var(--ink); transition: transform .1s ease, border-color .12s ease; }
+.step { width: 44px; height: 44px; flex: none; display: grid; place-items: center; font-family: "Spline Sans Mono", monospace; font-size: 22px; line-height: 1; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 11px; color: var(--ink); transition: transform .1s ease, border-color .12s ease; }
 .step:hover { border-color: var(--accent-ink); }
 .step:active { transform: scale(.9); }
 .weight__field { display: inline-flex; align-items: baseline; gap: 4px; min-width: 78px; justify-content: center; }
@@ -292,6 +292,11 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
 /* toast */
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 22px); transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; z-index: 60; max-width: 90%; text-align: center; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.has-action { pointer-events: auto; display: inline-flex; align-items: center; gap: 16px; }
+.toast__action { background: none; border: 0; color: inherit; font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; padding: 2px; cursor: pointer; min-height: 32px; }
+.confirm__title { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -.01em; margin: 0 0 8px; }
+.confirm__msg { font-size: 14px; line-height: 1.5; color: var(--ink-dim); margin: 0 0 22px; }
+.preview__error { color: var(--danger); font-size: 13px; line-height: 1.45; padding: 12px 14px; border: 1px solid var(--danger); border-radius: 11px; background: var(--surface-2); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
 </style>
@@ -502,6 +507,18 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
   </div>
 </div>
 
+<dialog class="sheet" id="confirmSheet" aria-labelledby="confirmTitle">
+  <div class="sheet__grip"></div>
+  <div class="sheet__body">
+    <h2 class="confirm__title" id="confirmTitle">Are you sure?</h2>
+    <p class="confirm__msg" id="confirmMsg"></p>
+    <div class="btn-row">
+      <button class="btn btn--danger" id="confirmYes" type="button">Confirm</button>
+      <button class="btn" id="confirmNo" type="button">Cancel</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:24px;font-family:sans-serif">This app needs JavaScript enabled.</p></noscript>
 
@@ -535,17 +552,17 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
     return null;
   }
   function parseProgramText(text) {
-    if (text == null || String(text).trim() === "") throw new Error("Nothing to load — paste the workout Claude gave you.");
+    if (text == null || String(text).trim() === "") throw new Error("Nothing to load. Paste the workout Claude gave you.");
     var s = String(text).trim();
     var fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (fence) s = fence[1].trim();
     var blob = extractFirstJsonObject(s);
-    if (blob == null) throw new Error("That doesn't look like a Training Log workout — paste the whole block, including the { … }.");
-    try { return JSON.parse(blob); } catch (e) { throw new Error("Couldn't read that as a valid workout — make sure you copied the whole { … } block."); }
+    if (blob == null) throw new Error("That doesn't look like a Training Log workout. Paste the whole block, including the { … }.");
+    try { return JSON.parse(blob); } catch (e) { throw new Error("Couldn't read that as a valid workout. Make sure you copied the whole { … } block."); }
   }
   function validateProgram(obj) {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) return { ok: false, error: "That isn't a workout in the right format." };
-    if (!Array.isArray(obj.weeks) || obj.weeks.length === 0) return { ok: false, error: "No weeks found — a workout needs at least one week." };
+    if (!Array.isArray(obj.weeks) || obj.weeks.length === 0) return { ok: false, error: "No weeks found: a workout needs at least one week." };
     for (var w = 0; w < obj.weeks.length; w++) {
       var wk = obj.weeks[w];
       if (!wk || !Array.isArray(wk.sessions) || wk.sessions.length === 0) return { ok: false, error: "Week " + (w + 1) + " has no sessions." };
@@ -660,9 +677,9 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
       program: program, activeWeek: 0, activeSession: Math.max(0, present.indexOf(v1.activeSession)), log: log, archive: [] };
   }
   function buildProgressSummary(state) {
-    if (!state || !state.program || !Array.isArray(state.program.weeks)) return "No training logged yet — this is a fresh start.";
+    if (!state || !state.program || !Array.isArray(state.program.weeks)) return "No training logged yet. This is a fresh start.";
     var prog = state.program, unit = prog.unit || state.unit || "kg", lg = state.log && typeof state.log === "object" ? state.log : {}, out = [];
-    out.push("Program: " + prog.title + (prog.goal ? " — " + prog.goal : ""));
+    out.push("Program: " + prog.title + (prog.goal ? " · " + prog.goal : ""));
     var curWeekNo = (prog.weeks[state.activeWeek] || {}).week || (state.activeWeek || 0) + 1;
     out.push("Currently: week " + curWeekNo + " of " + prog.weeks.length + " · unit " + unit); out.push("");
     var logged = false;
@@ -677,7 +694,7 @@ body.has-rest .toast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
           if (hit > 0) anyDone = true;
           exLines.push("    " + ex.name + ": " + hit + "/" + ex.sets + " sets @ " + ww + unit + " (target " + ex.sets + "×" + ex.reps + (ex.target ? ", " + ex.target : "") + ")");
         });
-        if (anyDone) { logged = true; wkLines.push("  " + ses.name + (slog && slog.date ? " — " + String(slog.date).slice(0, 10) : "") + ":"); exLines.forEach(function (l) { wkLines.push(l); }); }
+        if (anyDone) { logged = true; wkLines.push("  " + ses.name + (slog && slog.date ? " · " + String(slog.date).slice(0, 10) : "") + ":"); exLines.forEach(function (l) { wkLines.push(l); }); }
       });
       if (wkLines.length) { out.push("Week " + wk.week + (wk.deload ? " (deload)" : "") + ":"); wkLines.forEach(function (l) { out.push(l); }); out.push(""); }
     });
@@ -1131,10 +1148,10 @@ function generateProgram(intake, weightMap, seed) {
   roleList.forEach(function (r) { totalOf[r] = (totalOf[r] || 0) + 1; });
 
   function phaseLabel(wn, deload) {
-    if (deload)    return "Deload — consolidate, 50% volume, RPE 6";
-    if (wn === 1)  return "Accumulation — build work capacity, 3 RIR";
-    if (wn === 2)  return "Accumulation — volume increasing, 2 RIR";
-    return                "Overreach — peak volume, 1 RIR, push the ceiling";
+    if (deload)    return "Deload: consolidate, 50% volume, RPE 6";
+    if (wn === 1)  return "Accumulation: build work capacity, 3 RIR";
+    if (wn === 2)  return "Accumulation: volume increasing, 2 RIR";
+    return                "Overreach: peak volume, 1 RIR, push the ceiling";
   }
 
   var weeks = [];
@@ -1357,9 +1374,11 @@ function generateProgram(intake, weightMap, seed) {
       ? '<div class="weight-wrap"><div class="weight" role="group" aria-label="Working weight"><button type="button" class="step" data-act="w-" data-ex="' + e.id + '" aria-label="Decrease weight">−</button><span class="weight__field"><input class="weight__input mono" type="number" inputmode="decimal" step="' + STEP + '" min="0" value="' + lg.weight + '" data-act="wset" data-ex="' + e.id + '" aria-label="Working weight in ' + esc(unit) + '"><span class="weight__unit">' + esc(unit) + '</span></span><button type="button" class="step" data-act="w+" data-ex="' + e.id + '" aria-label="Increase weight">+</button></div>' + (ln ? '<div class="loadnote">' + esc(ln) + '</div>' : '') + '</div>'
       : e.type === "conditioning" ? ''
       : '<span class="weight-note">' + (e.weight > 0 ? esc(e.weight + " " + unit) : "Bodyweight") + ' · move with control</span>';
-    var cue = (e.target || e.rest)
-      ? '<div class="cue">' + (e.target ? '<span>target <b>' + esc(e.target) + '</b></span>' : "") + (e.rest ? '<span>rest <b>' + esc(e.rest) + '</b></span>' : "") + '</div>'
-      : "";
+    var cueInner = (e.target ? '<span>target <b>' + esc(e.target) + '</b></span>' : "") + (e.rest ? '<span>rest <b>' + esc(e.rest) + '</b></span>' : "");
+    // Conditioning: target IS the prescription, keep it on the card face. Strength/mobility:
+    // target/rest is reference, so demote it into Form notes and keep the face glanceable.
+    var faceCue = (e.type === "conditioning" && cueInner) ? '<div class="cue">' + cueInner + '</div>' : "";
+    var notesCue = (e.type !== "conditioning" && cueInner) ? '<div class="cue cue--notes">' + cueInner + '</div>' : "";
     var swapHtml = "";
     if (e.type === "conditioning" && typeof conditioningAlternatives === "function") {
       var allowedEq = (state.buildPrefs && Array.isArray(state.buildPrefs.equipment)) ? state.buildPrefs.equipment : null;
@@ -1373,10 +1392,10 @@ function generateProgram(intake, weightMap, seed) {
     return '<article class="card' + (complete ? " is-complete" : "") + '" data-ex="' + e.id + '" style="--i:' + i + '">' +
       '<header class="card__head">' + (badge ? '<span class="ex-badge">' + esc(badge) + '</span>' : '') + '<h3 class="card__name">' + esc(e.name) + '</h3><span class="now-chip" aria-hidden="true">Now</span><span class="tag tag--' + e.type + '">' + e.type + '</span></header>' +
       '<div class="card__row">' + weightCtrl + '<div class="setcount"><span class="setcount__done">' + doneCount + '</span><span class="setcount__sep">/</span><span class="setcount__total">' + total + '</span><span class="setcount__label">sets</span></div></div>' +
-      '<div class="pills" role="group" aria-label="Sets — tap to log">' + pills + '</div>' + cue + swapHtml +
+      '<div class="pills" role="group" aria-label="Sets — tap to log">' + pills + '</div>' + faceCue + swapHtml +
       '<button type="button" class="notes-toggle" data-act="notes" data-ex="' + e.id + '" aria-expanded="' + (e.notesOpen ? "true" : "false") + '" aria-controls="n-' + e.id + '"><span class="chev" aria-hidden="true">▸</span> Form notes' + (e.notes && e.notes.trim() ? ' <span class="dot" aria-hidden="true"></span>' : "") + '</button>' +
       '<div class="notes' + (e.notesOpen ? " is-open" : "") + '" id="n-' + e.id + '"><div class="notes__inner"><div class="notes__pad">' +
-      '<label class="field-label">Technique</label><div class="cuebox">' + formatCue(e.notes) + '</div>' +
+      '<label class="field-label">Technique</label><div class="cuebox">' + formatCue(e.notes) + '</div>' + notesCue +
       '<div class="scheme"><div class="scheme__item"><span class="field-label">Sets</span><div class="stepper"><button type="button" class="step" data-act="sets-" data-ex="' + e.id + '" aria-label="One fewer set">−</button><span class="stepper__val">' + total + '</span><button type="button" class="step" data-act="sets+" data-ex="' + e.id + '" aria-label="One more set">+</button></div></div>' +
       '<div class="scheme__item"><label class="field-label" for="reps-' + e.id + '">Reps target</label><input class="reps__input mono" id="reps-' + e.id + '" type="text" value="' + esc(e.reps) + '" data-act="reps" data-ex="' + e.id + '" aria-label="Reps target"></div></div>' +
       '</div></div></div></article>';
@@ -1465,11 +1484,15 @@ function generateProgram(intake, weightMap, seed) {
     }
   }
   function resetDay() {
-    var ses = curSession();
-    if (!confirm("Reset all sets for " + ses.name + " (week " + curWeek().week + ")?")) return;
-    var sl = state.log[ses.id];
+    var ses = curSession(), sid = ses.id;
+    var sl = state.log[sid];
+    var prev = sl ? JSON.parse(JSON.stringify(sl)) : null; // snapshot for Undo
     if (sl && sl.ex) { Object.keys(sl.ex).forEach(function (k) { sl.ex[k].done = sl.ex[k].done.map(function () { return false; }); }); sl.date = null; }
-    save(); renderHead(); renderList(true); toast(ses.name + " reset");
+    save(); renderHead(); renderList(true);
+    toastUndo(ses.name + " reset", function () {
+      if (prev) state.log[sid] = prev; else delete state.log[sid];
+      save(); renderHead(); renderList(true); toast("Reset undone");
+    });
   }
   function switchSession(i) { if (i === state.activeSession) return; hideRest(); state.activeSession = i; save(); renderTabs(); renderHead(); renderList(true); scrollToCurrent(); }
   function switchWeek(delta) {
@@ -1557,7 +1580,7 @@ function generateProgram(intake, weightMap, seed) {
       b.setAttribute("aria-pressed", locked ? "true" : (!!p[k]).toString());
       b.classList.toggle("is-locked", locked);
       b.setAttribute("aria-disabled", locked ? "true" : "false");
-      if (locked) b.title = "Cardio is core to Endurance — always on"; else b.removeAttribute("title");
+      if (locked) b.title = "Cardio is core to Endurance (always on)"; else b.removeAttribute("title");
     });
     document.querySelectorAll("#bEquip button").forEach(function (b) { b.setAttribute("aria-pressed", p.equipment.indexOf(b.getAttribute("data-eq")) >= 0); });
     document.querySelectorAll("#bWeeks button").forEach(function (b) {
@@ -1599,14 +1622,19 @@ function generateProgram(intake, weightMap, seed) {
   function copyRequest() {
     var text = $("reqText").value;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { toast("Copied — paste into Claude"); }).catch(fallbackCopy);
+      navigator.clipboard.writeText(text).then(function () { toast("Copied. Paste into Claude"); }).catch(fallbackCopy);
     } else fallbackCopy();
-    function fallbackCopy() { var ta = $("reqText"); ta.focus(); ta.select(); try { document.execCommand("copy"); toast("Copied — paste into Claude"); } catch (e) { toast("Select the text above and copy it"); } }
+    function fallbackCopy() { var ta = $("reqText"); ta.focus(); ta.select(); try { document.execCommand("copy"); toast("Copied. Paste into Claude"); } catch (e) { toast("Select the text above and copy it"); } }
+  }
+  function showLoadError(msg) {
+    var pv = $("loadPreview");
+    pv.innerHTML = '<div class="preview__error" role="alert">' + esc(msg) + '</div>';
+    pv.classList.remove("hidden");
   }
   function onLoadClick() {
     var raw = $("loadText").value, obj;
-    try { obj = parseProgramText(raw); } catch (e) { toast(e.message); return; }
-    var v = validateProgram(obj); if (!v.ok) { toast(v.error); return; }
+    try { obj = parseProgramText(raw); } catch (e) { showLoadError(e.message); return; }
+    var v = validateProgram(obj); if (!v.ok) { showLoadError(v.error); return; }
     pending = normalizeProgram(obj);
     var days = pending.weeks.reduce(function (m, w) { return Math.max(m, w.sessions.length); }, 0);
     var pv = $("loadPreview");
@@ -1670,12 +1698,15 @@ function generateProgram(intake, weightMap, seed) {
   function importBackup(file) {
     var reader = new FileReader();
     reader.onload = function () {
-      try {
-        var parsed = JSON.parse(reader.result), c = coerceState(parsed);
-        if (!c) throw new Error("bad");
-        if (!confirm("Replace all current data with this backup? This can't be undone.")) return;
-        hideRest(); state = c; save(); applyTheme(); renderAll(true); syncSegs(); closeSheet(); toast("Backup restored");
-      } catch (e) { toast("That file isn't a valid backup"); }
+      var c;
+      try { c = coerceState(JSON.parse(reader.result)); if (!c) throw new Error("bad"); }
+      catch (e) { toast("That file isn't a valid backup"); return; }
+      askConfirm({
+        title: "Restore this backup?",
+        message: "This replaces your current program and all logged history with the backup. It can't be undone.",
+        confirmLabel: "Restore",
+        onConfirm: function () { hideRest(); state = c; save(); applyTheme(); renderAll(true); syncSegs(); closeSheet(); toast("Backup restored"); }
+      });
     };
     reader.onerror = function () { toast("Couldn't read that file"); };
     reader.readAsText(file);
@@ -1684,8 +1715,12 @@ function generateProgram(intake, weightMap, seed) {
   $("importBtn").addEventListener("click", function () { $("importFile").click(); });
   $("importFile").addEventListener("change", function (ev) { if (ev.target.files && ev.target.files[0]) importBackup(ev.target.files[0]); ev.target.value = ""; });
   $("eraseBtn").addEventListener("click", function () {
-    if (!confirm("Reset to the Starter program? Your current program and history will be erased. This can't be undone.")) return;
-    hideRest(); state = freshState(defaultProgram()); save(); applyTheme(); renderAll(true); syncSegs(); closeSheet(); toast("Reset to Starter");
+    askConfirm({
+      title: "Reset to the Starter program?",
+      message: "Your current program and all logged history will be erased. This can't be undone. Export a backup first if you want to keep it.",
+      confirmLabel: "Erase and reset",
+      onConfirm: function () { hideRest(); state = freshState(defaultProgram()); save(); applyTheme(); renderAll(true); syncSegs(); closeSheet(); toast("Reset to Starter"); }
+    });
   });
 
   /* ===================== Rest timer (auto-start, read-only) ===================== */
@@ -1737,11 +1772,36 @@ function generateProgram(intake, weightMap, seed) {
   function refreshStorage() {
     var el = $("storageStatus"), dot = el.querySelector(".status__dot"), txt = el.querySelector("span:last-child");
     if (!(navigator.storage && navigator.storage.persisted)) { dot.className = "status__dot"; txt.textContent = "Saved on this device"; return; }
-    navigator.storage.persisted().then(function (p) { dot.className = "status__dot" + (p ? " ok" : ""); txt.textContent = p ? "Persistent — won't be auto-cleared" : "Best-effort (may clear under storage pressure)"; });
+    navigator.storage.persisted().then(function (p) { dot.className = "status__dot" + (p ? " ok" : ""); txt.textContent = p ? "Persistent, won't be auto-cleared" : "Best-effort (may clear under storage pressure)"; });
   }
   function initPersistence() { if (navigator.storage && navigator.storage.persist) { navigator.storage.persisted().then(function (p) { if (!p) return navigator.storage.persist(); }).catch(function () {}); } }
   var toastTimer;
-  function toast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2300); }
+  function toast(msg) { var t = $("toast"); t.classList.remove("has-action"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2300); }
+  function toastUndo(msg, onUndo) {
+    var t = $("toast");
+    t.textContent = "";
+    var span = document.createElement("span"); span.textContent = msg;
+    var btn = document.createElement("button"); btn.type = "button"; btn.className = "toast__action"; btn.textContent = "Undo";
+    t.appendChild(span); t.appendChild(btn);
+    t.classList.add("show", "has-action");
+    clearTimeout(toastTimer);
+    function dismiss() { t.classList.remove("show", "has-action"); }
+    btn.addEventListener("click", function () { dismiss(); onUndo(); });
+    toastTimer = setTimeout(dismiss, 6000);
+  }
+  // Custom destructive-action confirm (replaces native confirm() so the highest-stakes
+  // moment keeps the app's own vocabulary and names the consequence concretely).
+  function askConfirm(opts) {
+    var dlg = $("confirmSheet"), yes = $("confirmYes"), no = $("confirmNo");
+    $("confirmTitle").textContent = opts.title || "Are you sure?";
+    $("confirmMsg").textContent = opts.message || "";
+    yes.textContent = opts.confirmLabel || "Confirm";
+    function closeDlg() { if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); yes.removeEventListener("click", onYes); no.removeEventListener("click", onNo); }
+    function onYes() { closeDlg(); if (opts.onConfirm) opts.onConfirm(); }
+    function onNo() { closeDlg(); }
+    yes.addEventListener("click", onYes); no.addEventListener("click", onNo);
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  }
 
   function initIntro() {
     var KEY = "training-log:intro";
